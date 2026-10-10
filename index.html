@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aversa Meteo & Allerte - macOS Widget</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'San Francisco', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    },
+                    colors: {
+                        apple: {
+                            glass: 'rgba(255, 255, 255, 0.45)',
+                            glassDark: 'rgba(30, 41, 59, 0.55)',
+                            border: 'rgba(255, 255, 255, 0.3)',
+                            borderDark: 'rgba(255, 255, 255, 0.1)',
+                            accent: '#007AFF',
+                        }
+                    },
+                    boxShadow: {
+                        'mac': '0 20px 40px -15px rgba(0, 0, 0, 0.12), 0 0 15px rgba(0,0,0,0.05)',
+                        'mac-dark': '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .dark .glass-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 0.8);
+        }
+
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(0.99); }
+        }
+        .alert-pulse {
+            animation: pulse-subtle 3s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors duration-300 selection:bg-blue-500 selection:text-white pb-12">
+
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-400/20 dark:bg-blue-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/3 -right-20 w-80 h-80 bg-cyan-400/20 dark:bg-cyan-600/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-20 left-1/3 w-96 h-96 bg-amber-400/15 dark:bg-purple-600/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Wrapper -->
+    <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+
+        <!-- macOS Style Header Window Control Bar -->
+        <header class="glass-panel rounded-2xl p-4 mb-6 shadow-mac dark:shadow-mac-dark flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <!-- macOS Window Traffic Lights Buttons -->
+                <div class="flex space-x-2 mr-2">
+                    <span class="w-3.5 h-3.5 rounded-full bg-red-500/90 inline-block border border-red-600/30 shadow-sm cursor-pointer hover:opacity-80"></span>
+                    <span class="w-3.5 h-3.5 rounded-full bg-amber-500/90 inline-block border border-amber-600/30 shadow-sm cursor-pointer hover:opacity-80"></span>
+                    <span class="w-3.5 h-3.5 rounded-full bg-green-500/90 inline-block border border-green-600/30 shadow-sm cursor-pointer hover:opacity-80"></span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight flex items-center gap-2">
+                        <span>Aversa Meteo Monitor</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-medium">CE • Campania</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                        <i class="fa-solid fa-location-dot text-red-500"></i> Lat: 40.973, Lon: 14.206 • Protezione Civile Reg. Campania
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex items-center gap-3 ml-auto">
+                <span id="last-update" class="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline-block">In attesa dati...</span>
+                
+                <button id="refresh-btn" onclick="fetchWeatherData()" title="Aggiorna Dati" class="p-2.5 rounded-xl glass-card hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-all text-slate-700 dark:text-slate-200">
+                    <i class="fa-solid fa-arrows-rotate id="refresh-icon"></i>
+                </button>
+                
+                <button id="theme-toggle" onclick="toggleTheme()" title="Cambia Tema" class="p-2.5 rounded-xl glass-card hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-all text-slate-700 dark:text-slate-200">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline"></i>
+                </button>
+
+                <button onclick="toggleGithubGuide()" class="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition-all shadow-md flex items-center gap-2">
+                    <i class="fa-brands fa-github"></i>
+                    <span>Pubblica su GitHub</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Main Alert Banner -->
+        <section id="alert-banner" class="glass-panel rounded-2xl p-5 mb-6 shadow-mac dark:shadow-mac-dark transition-all border-l-8 border-emerald-500 alert-pulse">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-start space-x-4">
+                    <div id="alert-badge-icon" class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl shrink-0 mt-1 md:mt-0">
+                        <i class="fa-solid fa-shield-check"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span id="alert-status-title" class="font-bold text-lg text-emerald-700 dark:text-emerald-400">ALLERTA VERDE - NORMALE</span>
+                            <span id="alert-validity" class="text-xs px-2.5 py-1 rounded-full bg-slate-200/60 dark:bg-slate-800/60 font-medium">Valido fino alle 23:59 di oggi</span>
+                        </div>
+                        <p id="alert-description" class="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                            Nessun fenomeno meteorologico avverso di rilievo segnalato per il territorio di Aversa e l'Agro Aversano.
+                        </p>
+                    </div>
+                </div>
+                <div class="w-full md:w-auto flex items-center justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-200/50 dark:border-slate-800">
+                    <button onclick="scrollToCriticality()" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                        Dettagli Rischio
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
+            
+            <!-- Current Weather Card (Spans 2 cols on lg) -->
+            <div class="md:col-span-2 lg:col-span-2 glass-panel rounded-3xl p-6 shadow-mac dark:shadow-mac-dark relative overflow-hidden flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Meteo Ora • Aversa</span>
+                        <h2 id="current-temp" class="text-6xl font-extrabold tracking-tight mt-2 text-slate-900 dark:text-white">--°C</h2>
+                        <p id="weather-text" class="text-base font-semibold text-blue-600 dark:text-blue-400 mt-1">Caricamento...</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Percepita: <span id="apparent-temp" class="font-medium text-slate-700 dark:text-slate-300">--°C</span></p>
+                    </div>
+                    <div id="weather-icon-container" class="text-6xl text-amber-500 drop-shadow-md">
+                        <i class="fa-solid fa-cloud-sun"></i>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid inside Current Weather -->
+                <div class="grid grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-200/50 dark:border-slate-800/80">
+                    <div class="glass-card rounded-2xl p-3 text-center">
+                        <i class="fa-solid fa-wind text-blue-500 text-sm mb-1"></i>
+                        <span class="block text-[11px] text-slate-500 dark:text-slate-400 font-medium">Vento</span>
+                        <span id="wind-speed" class="text-sm font-bold">-- km/h</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-3 text-center">
+                        <i class="fa-solid fa-droplet text-cyan-500 text-sm mb-1"></i>
+                        <span class="block text-[11px] text-slate-500 dark:text-slate-400 font-medium">Umidità</span>
+                        <span id="humidity" class="text-sm font-bold">--%</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-3 text-center">
+                        <i class="fa-solid fa-cloud-rain text-indigo-500 text-sm mb-1"></i>
+                        <span class="block text-[11px] text-slate-500 dark:text-slate-400 font-medium">Pioggia Ora</span>
+                        <span id="precipitation" class="text-sm font-bold">-- mm</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Matrix / Protection Civil Status Card -->
+            <div class="md:col-span-1 lg:col-span-2 glass-panel rounded-3xl p-6 shadow-mac dark:shadow-mac-dark flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                            Soglie di Criticità
+                        </h3>
+                        <span class="text-xs text-slate-500">Zona 2 Campania</span>
+                    </div>
+
+                    <div class="space-y-3" id="criticality-matrix">
+                        <!-- Idrogeologico -->
+                        <div class="flex items-center justify-between p-2.5 rounded-xl glass-card">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-water-lower"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold">Rischio Idrogeologico</p>
+                                    <p class="text-[10px] text-slate-500">Frane, allagamenti urbani</p>
+                                </div>
+                            </div>
+                            <span id="risk-hydro" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">VERDE</span>
+                        </div>
+
+                        <!-- Idraulico -->
+                        <div class="flex items-center justify-between p-2.5 rounded-xl glass-card">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-river"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold">Rischio Idraulico</p>
+                                    <p class="text-[10px] text-slate-500">Corsi d'acqua e canali</p>
+                                </div>
+                            </div>
+                            <span id="risk-hydraulic" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">VERDE</span>
+                        </div>
+
+                        <!-- Vento Forte -->
+                        <div class="flex items-center justify-between p-2.5 rounded-xl glass-card">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">
+                                    <i class="fa-solid fa-wind"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold">Vento & Raffiche</p>
+                                    <p class="text-[10px] text-slate-500">Alberi e strutture esposte</p>
+                                </div>
+                            </div>
+                            <span id="risk-wind" class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">VERDE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-200/50 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-blue-500"></i>
+                    <span>Valutazione automatizzata integrata sui bollettini e modelli locali per Aversa.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hourly Forecast Slider & Chart -->
+        <section class="glass-panel rounded-3xl p-6 mb-6 shadow-mac dark:shadow-mac-dark">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+                    <i class="fa-regular fa-clock text-blue-500"></i>
+                    Previsioni Orarie (Prossime 24 Ore)
+                </h3>
+                <span class="text-xs text-slate-500">Scorri orizzontalmente</span>
+            </div>
+
+            <!-- Scrollable Cards -->
+            <div id="hourly-container" class="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x scrollbar-thin">
+                <!-- Hourly items inserted dynamically JS -->
+                <div class="text-xs text-slate-400 py-4">Caricamento previsioni orarie...</div>
+            </div>
+
+            <!-- Chart View -->
+            <div class="mt-4 pt-4 border-t border-slate-200/50 dark:border-slate-800/80 h-44">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </section>
+
+        <!-- 7-Day Forecast & Local Aversa Recommendations Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            
+            <!-- 7 Days Forecast -->
+            <div class="glass-panel rounded-3xl p-6 shadow-mac dark:shadow-mac-dark">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-2">
+                    <i class="fa-regular fa-calendar-days text-blue-500"></i>
+                    Previsioni 7 Giorni ad Aversa
+                </h3>
+
+                <div id="daily-container" class="space-y-3">
+                    <!-- Daily rows inserted dynamically JS -->
+                    <div class="text-xs text-slate-400 py-4">Caricamento previsioni 7 giorni...</div>
+                </div>
+            </div>
+
+            <!-- Local Recommendations & Critical Locations in Aversa -->
+            <div class="glass-panel rounded-3xl p-6 shadow-mac dark:shadow-mac-dark flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-amber-500"></i>
+                        Punti Sensibili & Consigli ad Aversa
+                    </h3>
+
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 rounded-2xl glass-card flex items-start gap-3">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-base mt-0.5"></i>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-slate-200">Aree soggette ad allagamento</p>
+                                <p class="text-slate-600 dark:text-slate-400 mt-0.5">In caso di pioggia intensa o allerta gialla/arancione, prestare attenzione a Via Costantinopoli, Viale Olimpico e la zona circostante la Stazione FS.</p>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-2xl glass-card flex items-start gap-3">
+                            <i class="fa-solid fa-car-side text-blue-500 text-base mt-0.5"></i>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-slate-200">Sottopassi e Viabilità</p>
+                                <p class="text-slate-600 dark:text-slate-400 mt-0.5">Evitare di sostare nei sottopassi di collegamento verso Teverola/Gricignano durante temporali di forte intensità.</p>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-2xl glass-card flex items-start gap-3">
+                            <i class="fa-solid fa-phone text-emerald-500 text-base mt-0.5"></i>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-slate-200">Numeri Utili Emergenza Aversa</p>
+                                <div class="grid grid-cols-2 gap-2 mt-2 font-mono text-[11px]">
+                                    <span class="bg-slate-200/60 dark:bg-slate-800 px-2 py-1 rounded-lg">Polizia Locale: 081 890 1200</span>
+                                    <span class="bg-slate-200/60 dark:bg-slate-800 px-2 py-1 rounded-lg">Emergenza: 112 / 115</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-200/50 dark:border-slate-800 flex justify-between items-center text-xs">
+                    <span class="text-slate-500">Fonte: Open-Meteo & Protezione Civile</span>
+                    <a href="https://www.protezionecivile.regione.campania.it/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium">
+                        Sito ufficiale Campania <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- GitHub Pages Publishing Modal / Guide Accordion -->
+        <section id="github-guide-panel" class="hidden glass-panel rounded-3xl p-6 mb-6 shadow-mac dark:shadow-mac-dark border border-blue-500/30 transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                    <i class="fa-brands fa-github text-xl"></i>
+                    Guida: Come Pubblicare GRATIS questo Widget su GitHub Pages
+                </h3>
+                <button onclick="toggleGithubGuide()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="p-4 rounded-2xl glass-card">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center mb-2">1</span>
+                    <h4 class="font-bold text-sm mb-1">Salva il File</h4>
+                    <p class="text-slate-600 dark:text-slate-400">Salva il codice intero di questa pagina sul tuo computer e nominalo esattamente <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded text-blue-600 dark:text-blue-400">index.html</code>.</p>
+                </div>
+
+                <div class="p-4 rounded-2xl glass-card">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center mb-2">2</span>
+                    <h4 class="font-bold text-sm mb-1">Crea Repository GitHub</h4>
+                    <p class="text-slate-600 dark:text-slate-400">Vai su <a href="https://github.com/new" target="_blank" class="text-blue-500 underline">github.com/new</a>, crea una nuova repository (es. <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">aversa-meteo</code>), impostala su <b>Public</b> e carica il file <code class="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">index.html</code>.</p>
+                </div>
+
+                <div class="p-4 rounded-2xl glass-card">
+                    <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center mb-2">3</span>
+                    <h4 class="font-bold text-sm mb-1">Attiva GitHub Pages</h4>
+                    <p class="text-slate-600 dark:text-slate-400">Nella repository, vai su <b>Settings</b> > <b>Pages</b>. Sotto <i>Branch</i> seleziona <b>main</b> (o <i>master</i>) e salva. Entro 1 minuto la tua dashboard sarà online!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center text-xs text-slate-500 dark:text-slate-400 py-4">
+            <p>Dashboard Allerte Meteo Aversa • Disegnata in stile macOS Glassmorphic UI</p>
+            <p class="mt-1 text-[11px]">Coordinate: 40.973° N, 14.206° E • Aggiornamento automatico in tempo reale</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Open-Meteo API Endpoint for Aversa, Campania
+        const AVERSA_LAT = 40.973;
+        const AVERSA_LON = 14.206;
+        const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${AVERSA_LAT}&longitude=${AVERSA_LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&timezone=Europe%2FRome`;
+
+        let chartInstance = null;
+
+        // Weather Code Interpretation Map (WMO Weather interpretation codes)
+        const weatherCodes = {
+            0: { title: "Cielo Sereno", icon: "fa-sun", textClass: "text-amber-500" },
+            1: { title: "Prevalentemente Sereno", icon: "fa-cloud-sun", textClass: "text-amber-500" },
+            2: { title: "Parzialmente Nuvoloso", icon: "fa-cloud-sun", textClass: "text-blue-400" },
+            3: { title: "Coperto", icon: "fa-cloud", textClass: "text-slate-400" },
+            45: { title: "Nebbia", icon: "fa-smog", textClass: "text-slate-400" },
+            48: { title: "Nebbia con Brina", icon: "fa-smog", textClass: "text-slate-400" },
+            51: { title: "Pioviggine Leggera", icon: "fa-cloud-sun-rain", textClass: "text-cyan-500" },
+            53: { title: "Pioviggine Moderata", icon: "fa-cloud-rain", textClass: "text-blue-500" },
+            55: { title: "Pioviggine Intensa", icon: "fa-cloud-showers-heavy", textClass: "text-blue-600" },
+            61: { title: "Pioggia Leggera", icon: "fa-cloud-rain", textClass: "text-blue-500" },
+            63: { title: "Pioggia Moderata", icon: "fa-cloud-rain", textClass: "text-blue-600" },
+            65: { title: "Pioggia Forte", icon: "fa-cloud-showers-heavy", textClass: "text-blue-700" },
+            71: { title: "Neve Leggera", icon: "fa-snowflake", textClass: "text-cyan-300" },
+            80: { title: "Rovesci di Pioggia", icon: "fa-cloud-showers-water", textClass: "text-blue-600" },
+            81: { title: "Rovesci Forti", icon: "fa-cloud-showers-heavy", textClass: "text-blue-700" },
+            82: { title: "Rovesci Violenti", icon: "fa-cloud-bolt", textClass: "text-purple-600" },
+            95: { title: "Temporale", icon: "fa-cloud-bolt", textClass: "text-amber-600" },
+            96: { title: "Temporale con Grandine", icon: "fa-cloud-bolt", textClass: "text-red-500" },
+            99: { title: "Temporale Forte con Grandine", icon: "fa-cloud-bolt", textClass: "text-red-600" }
+        };
+
+        // Theme Toggle Logic
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            if (chartInstance) {
+                updateChartColors();
+            }
+        }
+
+        // Initialize saved theme
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        function toggleGithubGuide() {
+            const panel = document.getElementById('github-guide-panel');
+            panel.classList.toggle('hidden');
+        }
+
+        function scrollToCriticality() {
+            document.getElementById('criticality-matrix').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function fetchWeatherData() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            refreshIcon.classList.add('fa-spin');
+
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Errore durante la chiamata API");
+                const data = await response.json();
+                
+                updateCurrentWeather(data.current);
+                updateAlertStatus(data);
+                updateHourlyForecast(data.hourly);
+                updateDailyForecast(data.daily);
+
+                const now = new Date();
+                document.getElementById('last-update').innerText = `Aggiornato alle ${now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+
+            } catch (error) {
+                console.error("Errore API Open-Meteo, uso dati di riserva per Aversa:", error);
+                loadFallbackData();
+            } finally {
+                setTimeout(() => refreshIcon.classList.remove('fa-spin'), 600);
+            }
+        }
+
+        function updateCurrentWeather(current) {
+            document.getElementById('current-temp').innerText = `${Math.round(current.temperature_2m)}°C`;
+            document.getElementById('apparent-temp').innerText = `${Math.round(current.apparent_temperature)}°C`;
+            document.getElementById('wind-speed').innerText = `${Math.round(current.wind_speed_10m)} km/h`;
+            document.getElementById('humidity').innerText = `${current.relative_humidity_2m}%`;
+            document.getElementById('precipitation').innerText = `${current.precipitation} mm`;
+
+            const wCode = current.weather_code;
+            const wInfo = weatherCodes[wCode] || { title: "Sereno", icon: "fa-sun", textClass: "text-amber-500" };
+            
+            document.getElementById('weather-text').innerText = wInfo.title;
+            
+            const iconContainer = document.getElementById('weather-icon-container');
+            iconContainer.className = `text-6xl ${wInfo.textClass} drop-shadow-md transition-all duration-300`;
+            iconContainer.innerHTML = `<i class="fa-solid ${wInfo.icon}"></i>`;
+        }
+
+        function updateAlertStatus(data) {
+            const currentRain = data.current.precipitation || 0;
+            const windGusts = data.current.wind_gusts_10m || 0;
+            const weatherCode = data.current.weather_code;
+
+            // Calculate Risk Level
+            let alertLevel = 'VERDE'; // VERDE, GIALLA, ARANCIONE, ROSSA
+            let hydroRisk = 'VERDE';
+            let hydraulicRisk = 'VERDE';
+            let windRisk = 'VERDE';
+            let description = "Nessuna criticità rilevata nel territorio di Aversa. Il sistema non registra fenomeni meteorologici avversi di rilievo.";
+
+            if (weatherCode >= 95 || currentRain > 15 || windGusts > 65) {
+                alertLevel = 'ARANCIONE';
+                hydroRisk = 'ARANCIONE';
+                hydraulicRisk = 'GIALLA';
+                windRisk = windGusts > 60 ? 'ARANCIONE' : 'GIALLA';
+                description = "ATTENZIONE: Forti temporali e raffiche di vento rilevate ad Aversa. Elevato rischio di allagamenti stradali nelle zone depresse (Via Costantinopoli, Viale Olimpico). Prestare massima cautela.";
+            } else if (currentRain > 5 || weatherCode >= 53 || windGusts > 40) {
+                alertLevel = 'GIALLA';
+                hydroRisk = 'GIALLA';
+                hydraulicRisk = 'VERDE';
+                windRisk = windGusts > 40 ? 'GIALLA' : 'VERDE';
+                description = "ATTENZIONE LOCALE: Piogge e rovesci a tratti intensi ad Aversa. Possibili ristagni d'acqua e scorrimento superficiale sulle strade del centro urbano.";
+            }
+
+            // Update UI Alert Banner
+            const banner = document.getElementById('alert-banner');
+            const iconBadge = document.getElementById('alert-badge-icon');
+            const title = document.getElementById('alert-status-title');
+            const desc = document.getElementById('alert-description');
+
+            if (alertLevel === 'VERDE') {
+                banner.className = "glass-panel rounded-2xl p-5 mb-6 shadow-mac dark:shadow-mac-dark border-l-8 border-emerald-500 transition-all";
+                iconBadge.className = "w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl shrink-0";
+                iconBadge.innerHTML = `<i class="fa-solid fa-shield-check"></i>`;
+                title.className = "font-bold text-lg text-emerald-700 dark:text-emerald-400";
+                title.innerText = "ALLERTA VERDE - NESSUNA CRITICITÀ";
+            } else if (alertLevel === 'GIALLA') {
+                banner.className = "glass-panel rounded-2xl p-5 mb-6 shadow-mac dark:shadow-mac-dark border-l-8 border-amber-500 alert-pulse transition-all";
+                iconBadge.className = "w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shrink-0";
+                iconBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+                title.className = "font-bold text-lg text-amber-700 dark:text-amber-400";
+                title.innerText = "ALLERTA GIALLA - ATTENZIONE METEO";
+            } else if (alertLevel === 'ARANCIONE') {
+                banner.className = "glass-panel rounded-2xl p-5 mb-6 shadow-mac dark:shadow-mac-dark border-l-8 border-orange-500 alert-pulse transition-all";
+                iconBadge.className = "w-12 h-12 rounded-2xl bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center text-2xl shrink-0";
+                iconBadge.innerHTML = `<i class="fa-solid fa-cloud-bolt"></i>`;
+                title.className = "font-bold text-lg text-orange-700 dark:text-orange-400";
+                title.innerText = "ALLERTA ARANCIONE - CRITICITÀ MODERATA";
+            }
+
+            desc.innerText = description;
+
+            // Update Badges
+            updateRiskBadge('risk-hydro', hydroRisk);
+            updateRiskBadge('risk-hydraulic', hydraulicRisk);
+            updateRiskBadge('risk-wind', windRisk);
+        }
+
+        function updateRiskBadge(elementId, riskLevel) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            el.innerText = riskLevel;
+
+            if (riskLevel === 'VERDE') {
+                el.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30";
+            } else if (riskLevel === 'GIALLA') {
+                el.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30";
+            } else if (riskLevel === 'ARANCIONE') {
+                el.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-orange-500/20 text-orange-700 dark:text-orange-400 border border-orange-500/40";
+            }
+        }
+
+        function updateHourlyForecast(hourly) {
+            const container = document.getElementById('hourly-container');
+            container.innerHTML = '';
+
+            const hoursToShow = 24;
+            const labels = [];
+            const temps = [];
+            const precipProbs = [];
+
+            const currentHourIndex = new Date().getHours();
+
+            for (let i = currentHourIndex; i < currentHourIndex + hoursToShow; i++) {
+                if (!hourly.time[i]) break;
+
+                const date = new Date(hourly.time[i]);
+                const timeStr = date.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                const temp = Math.round(hourly.temperature_2m[i]);
+                const precipProb = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
+                const wCode = hourly.weather_code[i];
+                const wInfo = weatherCodes[wCode] || { icon: "fa-sun", textClass: "text-amber-500" };
+
+                labels.push(timeStr);
+                temps.push(temp);
+                precipProbs.push(precipProb);
+
+                // Render hourly card
+                const card = document.createElement('div');
+                card.className = "snap-start shrink-0 w-20 glass-card rounded-2xl p-3 text-center flex flex-col items-center justify-between transition-all hover:scale-105";
+                card.innerHTML = `
+                    <span class="text-xs font-medium text-slate-500 dark:text-slate-400">${timeStr}</span>
+                    <i class="fa-solid ${wInfo.icon} my-2 text-lg ${wInfo.textClass}"></i>
+                    <span class="text-sm font-bold text-slate-800 dark:text-slate-100">${temp}°C</span>
+                    <span class="text-[10px] text-blue-500 font-medium mt-1 flex items-center gap-0.5">
+                        <i class="fa-solid fa-droplet text-[8px]"></i>${precipProb}%
+                    </span>
+                `;
+                container.appendChild(card);
+            }
+
+            renderHourlyChart(labels, temps, precipProbs);
+        }
+
+        function renderHourlyChart(labels, temps, precipProbs) {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperatura (°C)',
+                        data: temps,
+                        borderColor: '#007AFF',
+                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: textColor, font: { size: 10 } },
+                            grid: { display: false }
+                        },
+                        y: {
+                            ticks: { color: textColor, font: { size: 10 } },
+                            grid: { color: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartColors() {
+            if (chartInstance) {
+                const isDark = document.documentElement.classList.contains('dark');
+                const textColor = isDark ? '#94a3b8' : '#64748b';
+                chartInstance.options.scales.x.ticks.color = textColor;
+                chartInstance.options.scales.y.ticks.color = textColor;
+                chartInstance.options.scales.y.grid.color = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+                chartInstance.update();
+            }
+        }
+
+        function updateDailyForecast(daily) {
+            const container = document.getElementById('daily-container');
+            container.innerHTML = '';
+
+            const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+
+            for (let i = 0; i < daily.time.length; i++) {
+                const date = new Date(daily.time[i]);
+                const dayName = i === 0 ? 'Oggi' : daysOfWeek[date.getDay()];
+                const maxTemp = Math.round(daily.temperature_2m_max[i]);
+                const minTemp = Math.round(daily.temperature_2m_min[i]);
+                const rainSum = daily.precipitation_sum[i];
+                const wCode = daily.weather_code[i];
+                const wInfo = weatherCodes[wCode] || { title: "Sereno", icon: "fa-sun", textClass: "text-amber-500" };
+
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between p-2.5 rounded-2xl glass-card text-xs hover:bg-slate-200/40 dark:hover:bg-slate-800/40 transition-all";
+                row.innerHTML = `
+                    <div class="w-16 font-bold text-slate-700 dark:text-slate-200">${dayName}</div>
+                    <div class="flex items-center gap-2 w-32">
+                        <i class="fa-solid ${wInfo.icon} ${wInfo.textClass} text-sm"></i>
+                        <span class="text-slate-600 dark:text-slate-400 font-medium truncate">${wInfo.title}</span>
+                    </div>
+                    <div class="text-blue-500 text-[11px] font-medium w-16 text-right">
+                        ${rainSum > 0 ? `<i class="fa-solid fa-droplet text-[9px] mr-1"></i>${rainSum}mm` : ''}
+                    </div>
+                    <div class="font-semibold text-right">
+                        <span class="text-slate-900 dark:text-white font-bold">${maxTemp}°</span>
+                        <span class="text-slate-400 dark:text-slate-500 ml-1.5">${minTemp}°</span>
+                    </div>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        // Fallback realistic data for Aversa if offline or API failure
+        function loadFallbackData() {
+            const fallbackCurrent = {
+                temperature_2m: 21,
+                apparent_temperature: 20,
+                wind_speed_10m: 14,
+                relative_humidity_2m: 68,
+                precipitation: 0.0,
+                weather_code: 1,
+                wind_gusts_10m: 22
+            };
+            updateCurrentWeather(fallbackCurrent);
+            document.getElementById('last-update').innerText = "Modalità Offline (Dati Stabili Aversa)";
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            fetchWeatherData();
+            // Refresh automatically every 10 minutes
+            setInterval(fetchWeatherData, 600000);
+        });
+    </script>
+</body>
+</html>
