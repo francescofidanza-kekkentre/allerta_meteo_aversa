@@ -120,7 +120,7 @@
       display: block; 
     }
 
-    /* Sezione Allerta Unificata */
+    /* Sezione Allerta Unificata con Colore Dinamico */
     .alert-section-header {
       display: flex;
       justify-content: space-between;
@@ -139,16 +139,17 @@
     .base44-alert-card {
       display: flex;
       gap: 10px;
-      background: #fefce8;
-      border: 1px solid #fef08a;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
       border-radius: 14px;
       padding: 10px 12px;
       margin-bottom: 10px;
+      transition: all 0.3s ease;
     }
     .alert-icon-box {
       width: 30px;
       height: 30px;
-      background: #fef3c7;
+      background: rgba(255, 255, 255, 0.6);
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -166,8 +167,8 @@
     }
     .alert-badge {
       display: inline-block;
-      background: #ffedd5;
-      color: #c2410c;
+      background: #bbf7d0;
+      color: #166534;
       font-size: 10px;
       font-weight: 700;
       padding: 1px 6px;
@@ -181,7 +182,7 @@
       word-break: break-word;
     }
 
-    /* Meteo Corrente (Ridotto ed Ottimizzato) */
+    /* Meteo Corrente */
     .main-temp { text-align: center; margin-bottom: 10px; }
     .city { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.2px; }
     .temp-val { font-size: 38px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1.5px; line-height: 1.1; }
@@ -214,7 +215,7 @@
     }
     canvas { width: 100% !important; height: 115px !important; display: block; }
 
-    /* Lista Ora per Ora (48h) tarata all'altezza esatta di Tab 1 */
+    /* Lista Ora per Ora (48h) */
     .hourly-scroll {
       height: 410px;
       overflow-y: auto;
@@ -324,7 +325,7 @@
         <span class="update-time-top" id="updateTime">In verifica...</span>
       </div>
 
-      <!-- Card Allerta 100% Dinamica -->
+      <!-- Card Allerta con Sfondo Dinamico -->
       <div class="base44-alert-card" id="alertCard">
         <div class="alert-icon-box" id="alertIcon">⚠️</div>
         <div class="alert-content">
@@ -402,6 +403,7 @@
       return fetch('./alert.json?v=' + new Date().getTime())
         .then(function(res) { return res.json(); })
         .then(function(data) {
+          var alertCard = document.getElementById('alertCard');
           var titleEl = document.getElementById('alertTitle');
           var badgeEl = document.getElementById('alertBadge');
           var summaryEl = document.getElementById('alertSummary');
@@ -416,6 +418,10 @@
           if (status === 'ARANCIONE') {
             if (iconEl) iconEl.textContent = '⚠️';
             if (titleEl) titleEl.textContent = 'Allerta meteo Arancione (Zona 2 - Agro Aversano)';
+            if (alertCard) {
+              alertCard.style.background = '#fff7ed';
+              alertCard.style.borderColor = '#fdba74';
+            }
             if (badgeEl) {
               badgeEl.textContent = 'Moderata';
               badgeEl.style.background = '#ffedd5';
@@ -424,6 +430,10 @@
           } else if (status === 'GIALLA') {
             if (iconEl) iconEl.textContent = '⚠️';
             if (titleEl) titleEl.textContent = 'Allerta meteo Gialla (Zona 2 - Agro Aversano)';
+            if (alertCard) {
+              alertCard.style.background = '#fefce8';
+              alertCard.style.borderColor = '#fef08a';
+            }
             if (badgeEl) {
               badgeEl.textContent = 'Ordinaria';
               badgeEl.style.background = '#fef08a';
@@ -432,6 +442,10 @@
           } else if (status === 'ROSSA') {
             if (iconEl) iconEl.textContent = '🚨';
             if (titleEl) titleEl.textContent = 'Allerta meteo Rossa (Zona 2 - Agro Aversano)';
+            if (alertCard) {
+              alertCard.style.background = '#fef2f2';
+              alertCard.style.borderColor = '#fca5a5';
+            }
             if (badgeEl) {
               badgeEl.textContent = 'Elevata';
               badgeEl.style.background = '#fee2e2';
@@ -440,6 +454,10 @@
           } else {
             if (iconEl) iconEl.textContent = '✅';
             if (titleEl) titleEl.textContent = 'Nessuna allerta meteo in vigore';
+            if (alertCard) {
+              alertCard.style.background = '#f0fdf4';
+              alertCard.style.borderColor = '#bbf7d0';
+            }
             if (badgeEl) {
               badgeEl.textContent = 'Verde';
               badgeEl.style.background = '#bbf7d0';
