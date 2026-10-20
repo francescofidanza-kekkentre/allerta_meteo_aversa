@@ -360,30 +360,31 @@
 
   <script>
     function switchTab(tabId, btnElement) {
-      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      var panes = document.querySelectorAll('.tab-pane');
+      for (var i = 0; i < panes.length; i++) { panes[i].classList.remove('active'); }
+      var btns = document.querySelectorAll('.tab-btn');
+      for (var j = 0; j < btns.length; j++) { btns[j].classList.remove('active'); }
       
       document.getElementById(tabId).classList.add('active');
       btnElement.classList.add('active');
 
       if (tabId === 'tab-live' && window.hourlyTemps24) {
-        setTimeout(() => drawChart(window.hourlyTemps24), 50);
+        setTimeout(function() { drawChart(window.hourlyTemps24); }, 50);
       }
     }
 
-    async function loadAlert() {
-      try {
-        const response = await fetch('./alert.json?v=' + new Date().getTime());
-        if (response.ok) {
-          const data = await response.json();
-          const banner = document.getElementById('alertBanner');
-          const detailsEl = document.getElementById('alertDetailsText');
+    function loadAlert() {
+      fetch('./alert.json?v=' + new Date().getTime())
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+          var banner = document.getElementById('alertBanner');
+          var detailsEl = document.getElementById('alertDetailsText');
 
           banner.className = 'alert-banner status-' + data.status;
 
-          let icon = '✅';
-          let title = 'Nessuna allerta meteo critica in vigore';
-          let badgeText = 'Verde';
+          var icon = '✅';
+          var title = 'Nessuna allerta meteo critica in vigore';
+          var badgeText = 'Verde';
 
           if (data.status === 'ARANCIONE') {
             icon = '⚠️';
@@ -399,16 +400,9 @@
             badgeText = 'Elevata';
           }
 
-          banner.innerHTML = `
-            <div class="alert-banner-header">
-              <span>${icon}</span>
-              <span>${title}</span>
-            </div>
-            <div><span class="alert-badge">${badgeText}</span></div>
-            <div class="alert-summary">
-              ${data.message}
-            </div>
-          `;
+          banner.innerHTML = '<div class="alert-banner-header"><span>' + icon + '</span><span>' + title + '</span></div>' +
+                             '<div><span class="alert-badge">' + badgeText + '</span></div>' +
+                             '<div class="alert-summary">' + data.message + '</div>';
 
           if (data.status !== 'VERDE') {
             detailsEl.style.display = 'block';
@@ -418,36 +412,34 @@
           }
 
           document.getElementById('updateTime').textContent = 'Ultima verifica ufficiale: ' + data.updated_at;
-        }
-      } catch (e) {
-        console.warn("Lettura alert.json fallita, uso stato predefinito.", e);
-      }
+        })
+        .catch(function(e) {
+          console.warn("Lettura alert.json fallita, uso stato predefinito.", e);
+        });
     }
 
-    async function loadMeteo() {
-      try {
-        const url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m&daily=precipitation_sum&timezone=Europe%2FRome&forecast_days=3';
-        const res = await fetch(url);
-        const data = await res.json();
+    function loadMeteo() {
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m&daily=precipitation_sum&timezone=Europe%2FRome&forecast_days=3';
+      fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
+          document.getElementById('windSpeed').textContent = data.current.wind_speed_10m + ' km/h';
+          document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
+          document.getElementById('rainAmount').textContent = (data.daily.precipitation_sum[0] || 0) + ' mm';
+          document.getElementById('weatherCondition').textContent = getWeatherDesc(data.current.weather_code).text;
 
-        document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
-        document.getElementById('windSpeed').textContent = data.current.wind_speed_10m + ' km/h';
-        document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
-        document.getElementById('rainAmount').textContent = (data.daily.precipitation_sum[0] || 0) + ' mm';
-        document.getElementById('weatherCondition').textContent = getWeatherDesc(data.current.weather_code).text;
-
-        window.hourlyTemps24 = data.hourly.temperature_2m.slice(0, 24);
-        drawChart(window.hourlyTemps24);
-
-        renderHourlyForecast(data.hourly);
-
-      } catch (e) {
-        console.error("Errore recupero meteo:", e);
-      }
+          window.hourlyTemps24 = data.hourly.temperature_2m.slice(0, 24);
+          drawChart(window.hourlyTemps24);
+          renderHourlyForecast(data.hourly);
+        })
+        .catch(function(e) {
+          console.error("Errore recupero meteo:", e);
+        });
     }
 
     function getWeatherDesc(code) {
-      const map = {
+      var map = {
         0: { text: 'Sereno', icon: '☀️' },
         1: { text: 'Quasi Sereno', icon: '🌤️' },
         2: { text: 'Poco Nuvoloso', icon: '⛅' },
@@ -464,84 +456,82 @@
     }
 
     function renderHourlyForecast(hourlyData) {
-      const container = document.getElementById('hourlyContainer');
+      var container = document.getElementById('hourlyContainer');
       container.innerHTML = '';
 
-      const now = new Date();
-      let lastDayString = '';
+      var now = new Date();
+      var lastDayString = '';
+      var startIndex = 0;
 
-      let startIndex = 0;
-      for (let i = 0; i < hourlyData.time.length; i++) {
+      for (var i = 0; i < hourlyData.time.length; i++) {
         if (new Date(hourlyData.time[i]) >= now) {
           startIndex = Math.max(0, i - 1);
           break;
         }
       }
 
-      const hoursToDisplay = hourlyData.time.slice(startIndex, startIndex + 48);
+      var hoursToDisplay = hourlyData.time.slice(startIndex, startIndex + 48);
 
-      hoursToDisplay.forEach((timeStr, idx) => {
-        const realIdx = startIndex + idx;
-        const dateObj = new Date(timeStr);
+      for (var idx = 0; idx < hoursToDisplay.length; idx++) {
+        var realIdx = startIndex + idx;
+        var dateObj = new Date(hoursToDisplay[idx]);
 
-        const options = { weekday: 'long', day: 'numeric', month: 'short' };
-        const dayString = dateObj.toLocaleDateString('it-IT', options);
+        var options = { weekday: 'long', day: 'numeric', month: 'short' };
+        var dayString = dateObj.toLocaleDateString('it-IT', options);
 
         if (dayString !== lastDayString) {
           lastDayString = dayString;
-          const header = document.createElement('div');
+          var header = document.createElement('div');
           header.className = 'day-header';
           header.textContent = dayString.toUpperCase();
           container.appendChild(header);
         }
 
-        const hoursFormatted = dateObj.getHours().toString().padStart(2, '0') + ':00';
-        const weatherInfo = getWeatherDesc(hourlyData.weather_code[realIdx]);
-        const temp = Math.round(hourlyData.temperature_2m[realIdx]);
-        const rainProb = hourlyData.precipitation_probability ? hourlyData.precipitation_probability[realIdx] : 0;
+        var hoursFormatted = (dateObj.getHours() < 10 ? '0' : '') + dateObj.getHours() + ':00';
+        var weatherInfo = getWeatherDesc(hourlyData.weather_code[realIdx]);
+        var temp = Math.round(hourlyData.temperature_2m[realIdx]);
+        var rainProb = hourlyData.precipitation_probability ? hourlyData.precipitation_probability[realIdx] : 0;
 
-        const row = document.createElement('div');
+        var row = document.createElement('div');
         row.className = 'hourly-row';
-        row.innerHTML = `
-          <span class="hourly-time">${hoursFormatted}</span>
-          <span class="hourly-icon-desc"><span>${weatherInfo.icon}</span> ${weatherInfo.text}</span>
-          <span class="hourly-rain">${rainProb > 0 ? '💧 ' + rainProb + '%' : ''}</span>
-          <span class="hourly-temp">${temp}°</span>
-        `;
+        row.innerHTML = '<span class="hourly-time">' + hoursFormatted + '</span>' +
+                        '<span class="hourly-icon-desc"><span>' + weatherInfo.icon + '</span> ' + weatherInfo.text + '</span>' +
+                        '<span class="hourly-rain">' + (rainProb > 0 ? '💧 ' + rainProb + '%' : '') + '</span>' +
+                        '<span class="hourly-temp">' + temp + '°</span>';
         container.appendChild(row);
-      });
+      }
     }
 
     function drawChart(temps) {
-      const canvas = document.getElementById('tempChart');
+      var canvas = document.getElementById('tempChart');
       if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const dpr = window.devicePixelRatio || 1;
+      var ctx = canvas.getContext('2d');
+      var dpr = window.devicePixelRatio || 1;
       
       canvas.width = canvas.offsetWidth * dpr;
       canvas.height = canvas.offsetHeight * dpr;
       ctx.scale(dpr, dpr);
 
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
+      var w = canvas.offsetWidth;
+      var h = canvas.offsetHeight;
       if (w === 0 || h === 0) return;
 
-      const min = Math.min(...temps) - 1;
-      const max = Math.max(...temps) + 1;
+      var min = Math.min.apply(null, temps) - 1;
+      var max = Math.max.apply(null, temps) + 1;
 
       ctx.clearRect(0, 0, w, h);
 
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      var grad = ctx.createLinearGradient(0, 0, 0, h);
       grad.addColorStop(0, 'rgba(2, 132, 199, 0.25)');
       grad.addColorStop(1, 'rgba(2, 132, 199, 0.0)');
 
       ctx.beginPath();
-      temps.forEach((t, i) => {
-        const x = (i / (temps.length - 1)) * w;
-        const y = h - ((t - min) / (max - min)) * (h - 16) - 8;
+      for (var i = 0; i < temps.length; i++) {
+        var x = (i / (temps.length - 1)) * w;
+        var y = h - ((temps[i] - min) / (max - min)) * (h - 16) - 8;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
-      });
+      }
 
       ctx.strokeStyle = '#0284c7';
       ctx.lineWidth = 2.5;
@@ -553,13 +543,13 @@
       ctx.fill();
     }
 
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
+    var deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
-      const btn = document.getElementById('installBtn');
+      var btn = document.getElementById('installBtn');
       btn.style.display = 'flex';
-      btn.onclick = () => {
+      btn.onclick = function() {
         btn.style.display = 'none';
         deferredPrompt.prompt();
       };
