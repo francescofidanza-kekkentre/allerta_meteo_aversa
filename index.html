@@ -206,4 +206,127 @@
       text-align: center;
     }
     .stat-label { font-size: 11px; color: #64748b; display: block; margin-bottom: 4px; font-weight: 500; }
-    .
+    .stat-val { font-size: 13px; font-weight: 700; color: #1e293b; }
+
+    /* Grafico 24h con scale per assi */
+    .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .chart-box {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      padding: 12px 8px 8px 8px;
+      margin-bottom: 16px;
+    }
+    canvas { width: 100% !important; height: 135px !important; display: block; }
+
+    /* Lista Ora per Ora (48h) */
+    .hourly-scroll {
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .hourly-scroll::-webkit-scrollbar { width: 5px; }
+    .hourly-scroll::-webkit-scrollbar-track { background: transparent; }
+    .hourly-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
+
+    .day-header {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0284c7;
+      background: rgba(2, 132, 199, 0.08);
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin-top: 6px;
+      margin-bottom: 2px;
+    }
+
+    .hourly-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .hourly-time { font-weight: 600; width: 50px; color: #334155; }
+    .hourly-icon-desc { display: flex; align-items: center; gap: 6px; flex: 1; color: #64748b; font-size: 12px; }
+    .hourly-rain { font-size: 11px; color: #0284c7; font-weight: 600; width: 48px; text-align: right; }
+    .hourly-temp { font-weight: 700; color: #0f172a; width: 36px; text-align: right; }
+
+    /* Pulsanti Azione */
+    .btn-group { display: flex; flex-direction: column; gap: 8px; }
+    
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-pdf {
+      color: #334155;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .btn-pdf:hover { background: rgba(0, 0, 0, 0.08); }
+
+    .btn-pwa {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+      display: none;
+    }
+    .btn-pwa:hover { background: #0369a1; }
+
+    .footer-time { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 14px; }
+  </style>
+</head>
+<body>
+
+  <div class="widget-card">
+    <!-- Header Mac con Tasto Refresh -->
+    <div class="mac-header">
+      <div class="dots">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <div class="widget-title">Aversa (CE) • Protezione Civile</div>
+      <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
+    </div>
+
+    <!-- Switcher Schede / Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('tab-live', this)">Meteo & Allerta</button>
+      <button class="tab-btn" onclick="switchTab('tab-hourly', this)">Ora per Ora (48h)</button>
+    </div>
+
+    <!-- TAB 1: Meteo Live & Allerta -->
+    <div id="tab-live" class="tab-pane active">
+      
+      <div class="alert-section-header">
+        <span class="section-label">Allerte in Vigore</span>
+        <span class="update-time-top" id="updateTime">In verifica...</span>
+      </div>
+
+      <!-- Card Allerta 100% Dinamica dal backend JSON -->
+      <div class="base44-alert-card" id="alertCard">
+        <div class="alert-icon-box" id="alertIcon">⚠️</div>
+        <div class="alert-content">
+          <div class="alert-title" id="alertTitle">
