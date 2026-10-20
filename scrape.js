@@ -12,63 +12,61 @@ async function runScraper() {
   let infoOrdinanzaScuole = null;
 
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ 
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
     const context = await browser.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
     });
     const page = await context.newPage();
 
     // METODO 1: Scraping Bollettino Protezione Civile Campania (Attuale & Previsto)
-    console.log('1. Controllo Bollettino Protezione Civile Campania...');
+    console.log('1. Connessione al portale Protezione Civile Campania...');
     try {
-      await page.goto('https://centrofunzionale.regione.campania.it/', { timeout: 35000, waitUntil: 'networkidle' });
+      await page.goto('https://centrofunzionale.regione.campania.it/', { 
+        timeout: 45000, 
+        waitUntil: 'domcontentloaded' 
+      });
       
+      // Attesa esplicita di 6 secondi per consentire ai widget JS di caricare "Stato di Allerta Previsto"
+      console.log('   In attesa del rendering grafico dei riquadri di allerta...');
+      await page.waitForTimeout(6000);
+
       const fullText = await page.textContent('body');
+      console.log('   Testo rilevato dalla pagina (primi 300 caratteri):', fullText.substring(0, 300).replace(/\s+/g, ' '));
 
-      // Helper per valutare la gravità del livello
-      function getLevelScore(text) {
-        if (/ROSSA/i.test(text)) return 3;
-        if (/ARANCIONE/i.test(text)) return 2;
-        if (/GIALLA/i.test(text)) return 1;
-        return 0;
-      }
+      // Controllo case-insensitive su tutto il testo visibile
+      const haArancione = /ARANCIONE/i.test(fullText);
+      const haRossa = /ROSSA/i.test(fullText);
+      const haGialla = /GIALLA/i.test(fullText);
 
-      let maxScore = 0;
-
-      // Analizza tutto il testo visibile nella pagina cercando i blocchi di allerta
-      if (/ARANCIONE/i.test(fullText)) {
-        maxScore = Math.max(maxScore, 2);
-      }
-      if (/ROSSA/i.test(fullText)) {
-        maxScore = Math.max(maxScore, 3);
-      }
-      if (/GIALLA/i.test(fullText) && maxScore < 1) {
-        maxScore = 1;
-      }
-
-      // Assegna lo stato in base al rischio più alto (Attuale o Previsto)
-      if (maxScore === 3) {
+      if (haRossa) {
         statusAllerta = 'ROSSA';
-        dettaglioAllerta = 'Allerta meteo ROSSA (Criticità Elevata) prevista/in vigore per la Zona 2 (Agro Aversano).';
-      } else if (maxScore === 2) {
+        dettaglioAllerta = 'Allerta meteo ROSSA (Criticità Elevata) diramata per la Zona 2 (Agro Aversano).';
+      } else if (haArancione) {
         statusAllerta = 'ARANCIONE';
-        dettaglioAllerta = 'Allerta meteo ARANCIONE per rischio idrogeologico e temporali prevista/in vigore per la Zona 2 (Agro Aversano).';
-      } else if (maxScore === 1) {
+        dettaglioAllerta = 'Allerta meteo ARANCIONE per rischio idrogeologico e temporali per la Zona 2 (Agro Aversano).';
+      } else if (haGialla) {
         statusAllerta = 'GIALLA';
         dettaglioAllerta = 'Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 2 (Agro Aversano).';
       }
+
+      console.log(`   --> Stato allerta rilevato dal portale: ${statusAllerta}`);
 
     } catch (e) {
       console.warn('⚠️ Errore durante lo scraping della Protezione Civile:', e.message);
     }
 
-    // Se c'è un'allerta (Gialla, Arancione o Rossa), verifica le ordinanze comunali sulle scuole
+    // Se c'è un'allerta in arrivo (Gialla, Arancione o Rossa), verifica le ordinanze comunali sulle scuole
     if (statusAllerta !== 'VERDE') {
       
-      // METODO 2: Scraping Albo Pretorio / Notizie del Comune di Aversa
+      // METODO 2: Scraping Notizie dal Comune di Aversa
       console.log('2. Scraping Notizie dal sito del Comune di Aversa...');
       try {
         await page.goto('https://www.comune.aversa.ce.it/', { timeout: 20000, waitUntil: 'domcontentloaded' });
+        await page.waitForTimeout(2000);
         const comuneText = await page.textContent('body');
 
         const regexScuole = /(chiusura|sospensione).*scuole|scuole.*chiuse|ordinanza.*scuole/i;
@@ -108,7 +106,7 @@ async function runScraper() {
     if (browser) await browser.close();
   }
 
-  // Costruzione del messaggio per il riquadro giallo della PWA
+  // Costruzione del messaggio per la PWA
   let messaggioFinale = dettaglioAllerta;
   if (infoOrdinanzaScuole) {
     messaggioFinale += ' ' + infoOrdinanzaScuole;
