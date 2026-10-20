@@ -2,8 +2,8 @@ name: Aggiorna Allerta Meteo Aversa
 
 on:
   schedule:
-    - cron: '0 * * * *' # Esecuzione ogni ora
-  workflow_dispatch: # Avvio manuale
+    - cron: '0 * * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Scansione Bollettini e Termini Tecnici Protezione Civile
+      - name: Scansione OpenData DPC e Campania
         run: |
           python3 -c "
           import urllib.request, json, datetime, ssl
@@ -24,39 +24,73 @@ jobs:
           ctx.check_hostname = False
           ctx.verify_mode = ssl.CERT_NONE
 
-          headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+          headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'}
 
           status = 'VERDE'
-          msg = 'Nessuna allerta critica per Aversa / Zona 2'
+          msg = 'Nessuna allerta critica per Aversa (Zona 2)'
+          found = False
 
-          # Fonti: Open Data DPC Nazionale + Portale Campania + Feed RSS
-          urls = [
-              'https://raw.githubusercontent.com/pcm-dpc/DPC-Bollettini-Criticita-Idrogeologica-Idraulica/master/latest/bollettino.json',
-              'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
-              'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo'
-          ]
+          # 1. Scansione OpenData Protezione Civile Nazionale
+          dpc_url = 'https://raw.githubusercontent.com/pcm-dpc/DPC-Bollettini-Criticita-Idrogeologica-Idraulica/master/latest/today_today.json'
+          try:
+              req = urllib.request.Request(dpc_url, headers=headers)
+              with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
+                  data = json.loads(resp.read().decode('utf-8'))
+                  print('>>> Connessione OpenData DPC riuscita.')
+                  
+                  crit_list = []
+                  for feature in data.get('features', []):
+                      props = feature.get('properties', {})
+                      info_str = str(props).lower()
+                      
+                      # Verifica se la feature riguarda la Campania / Zona 2
+                      if 'cam' in info_str or 'campania' in info_str:
+                          if any(k in info_str for k in ['elevata', 'rossa', '3']):
+                              crit_list.append('ROSSA')
+                          elif any(k in info_str for k in ['moderata', 'arancione', '2']):
+                              crit_list.append('ARANCIONE')
+                          elif any(k in info_str for k in ['ordinaria', 'gialla', '1']):
+                              crit_list.append('GIALLA')
 
-          fetched = []
-          for url in urls:
-              try:
-                  req = urllib.request.Request(url, headers=headers)
-                  with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
-                      fetched.append(resp.read().decode('utf-8', errors='ignore'))
-              except Exception as e:
-                  print(f'Errore {url}: {e}')
+                  if 'ROSSA' in crit_list:
+                      status, msg, found = 'ROSSA', '🔴 ALLERTA ROSSA per Aversa (Zona 2)', True
+                  elif 'ARANCIONE' in crit_list:
+                      status, msg, found = 'ARANCIONE', '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)', True
+                  elif 'GIALLA' in crit_list:
+                      status, msg, found = 'GIALLA', '⚠️ ALLERTA GIALLA per Aversa (Zona 2)', True
+                  
+                  print(f'>>> Criticità rilevate da DPC: {crit_list}')
+          except Exception as e:
+              print(f'>>> Errore OpenData DPC: {e}')
 
-          text = ' '.join(fetched).lower()
+          # 2. Scansione di riserva su RSS / Portale Campania
+          if not found:
+              print('>>> Avvio scansione di riserva su portale regionale...')
+              urls = [
+                  'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
+                  'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo'
+              ]
+              raw_text = ''
+              for u in urls:
+                  try:
+                      req = urllib.request.Request(u, headers=headers)
+                      with urllib.request.urlopen(req, timeout=10, context=ctx) as r:
+                          raw_text += ' ' + r.read().decode('utf-8', errors='ignore')
+                  except Exception as e:
+                      print(f'Errore {u}: {e}')
 
-          # Valutazione con termini tecnici e colori ufficiali
-          if any(k in text for k in ['rossa', 'elevata criticita', 'elevata criticità', 'fase di allarme']):
-              status = 'ROSSA'
-              msg = '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
-          elif any(k in text for k in ['arancione', 'moderata criticita', 'moderata criticità', 'preallarme']):
-              status = 'ARANCIONE'
-              msg = '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
-          elif any(k in text for k in ['gialla', 'ordinaria criticita', 'ordinaria criticità', 'fase di attenzione']):
-              status = 'GIALLA'
-              msg = '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
+              text_lower = raw_text.lower()
+              if 'arancion' in text_lower or 'moderata critic' in text_lower or 'preallarme' in text_lower:
+                  status = 'ARANCIONE'
+                  msg = '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
+              elif 'giall' in text_lower or 'ordinaria critic' in text_lower or 'attenzione' in text_lower:
+                  status = 'GIALLA'
+                  msg = '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
+              elif 'ross' in text_lower or 'elevata critic' in text_lower or 'allarme' in text_lower:
+                  status = 'ROSSA'
+                  msg = '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
+
+          print(f'>>> RISULTATO FINALE SALVATO: {status} - {msg}')
 
           out = {
               'status': status,
