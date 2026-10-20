@@ -28,10 +28,10 @@
 
     /* Card Widget macOS Glassmorphism in Light Mode */
     .widget-card {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
-      border: 1px solid rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.95);
       border-radius: 24px;
       width: 100%;
       max-width: 430px;
@@ -55,7 +55,7 @@
 
     /* Pulsante Aggiornamento Manuale */
     .refresh-btn {
-      background: rgba(0, 0, 0, 0.04);
+      background: rgba(0, 0, 0, 0.05);
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 50%;
       width: 32px;
@@ -68,7 +68,7 @@
       transition: background 0.2s;
       outline: none;
     }
-    .refresh-btn:hover { background: rgba(0, 0, 0, 0.09); }
+    .refresh-btn:hover { background: rgba(0, 0, 0, 0.1); }
     .refresh-btn.spinning { animation: spinAnim 0.8s linear infinite; }
     @keyframes spinAnim {
       0% { transform: rotate(0deg); }
@@ -150,7 +150,7 @@
       font-size: 16px;
       flex-shrink: 0;
     }
-    .alert-content { flex: 1; }
+    .alert-content { flex: 1; min-width: 0; }
     .alert-title {
       font-size: 13px;
       font-weight: 700;
@@ -172,13 +172,14 @@
       font-size: 12px;
       line-height: 1.45;
       color: #475569;
+      word-break: break-word;
     }
 
     .alert-extended-text {
       font-size: 12px;
       line-height: 1.55;
       color: #64748b;
-      background: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.65);
       border: 1px solid rgba(0, 0, 0, 0.05);
       border-radius: 12px;
       padding: 12px 14px;
@@ -199,7 +200,7 @@
       margin-bottom: 18px;
     }
     .stat-card {
-      background: rgba(255, 255, 255, 0.65);
+      background: rgba(255, 255, 255, 0.7);
       border: 1px solid rgba(0, 0, 0, 0.05);
       border-radius: 12px;
       padding: 10px 6px;
@@ -208,10 +209,10 @@
     .stat-label { font-size: 11px; color: #64748b; display: block; margin-bottom: 4px; font-weight: 500; }
     .stat-val { font-size: 13px; font-weight: 700; color: #1e293b; }
 
-    /* Grafico 24h con scale per assi */
+    /* Grafico 24h con Scale Assi Visibili */
     .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .chart-box {
-      background: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.75);
       border: 1px solid rgba(0, 0, 0, 0.06);
       border-radius: 16px;
       padding: 12px 8px 8px 8px;
@@ -325,8 +326,402 @@
         <span class="update-time-top" id="updateTime">In verifica...</span>
       </div>
 
-      <!-- Card Allerta 100% Dinamica dal backend JSON -->
+      <!-- Card Allerta 100% Dinamica -->
       <div class="base44-alert-card" id="alertCard">
         <div class="alert-icon-box" id="alertIcon">⚠️</div>
         <div class="alert-content">
-          <div class="alert-title" id="alertTitle">
+          <div class="alert-title" id="alertTitle">Allerta Meteo Aversa</div>
+          <div><span class="alert-badge" id="alertBadge">Verifica</span></div>
+          <div class="alert-summary" id="alertSummary">Caricamento bollettino in corso...</div>
+        </div>
+      </div>
+
+      <!-- Testo Dettaglio Dinamico -->
+      <div id="alertDetailsText" class="alert-extended-text">
+        Caricamento informazioni ufficiali della Protezione Civile per Aversa...
+      </div>
+
+      <!-- Meteo Principale -->
+      <div class="main-temp">
+        <div class="city">Aversa</div>
+        <div class="temp-val" id="currentTemp">--°</div>
+        <div class="condition" id="weatherCondition">Caricamento meteo...</div>
+      </div>
+
+      <!-- Metriche -->
+      <div class="grid-stats">
+        <div class="stat-card">
+          <span class="stat-label">Vento</span>
+          <span class="stat-val" id="windSpeed">-- km/h</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Pioggia Oggi</span>
+          <span class="stat-val" id="rainAmount">-- mm</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Umidità</span>
+          <span class="stat-val" id="humidityVal">-- %</span>
+        </div>
+      </div>
+
+      <!-- Grafico Temperature 24 Ore con Scale Assi -->
+      <div class="sec-title">Evoluzione Temperature (24h)</div>
+      <div class="chart-box">
+        <canvas id="tempChart"></canvas>
+      </div>
+    </div>
+
+    <!-- TAB 2: Ora per Ora 48h -->
+    <div id="tab-hourly" class="tab-pane">
+      <div class="sec-title">Previsioni Orarie • Prossimi 2 Giorni</div>
+      <div class="hourly-scroll" id="hourlyContainer">
+        <div class="hourly-row">Caricamento previsioni orarie...</div>
+      </div>
+    </div>
+
+    <!-- Pulsanti Azione -->
+    <div class="btn-group">
+      <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener noreferrer" class="btn btn-pdf">
+        🌐 Portale Protezione Civile Campania
+      </a>
+      <button id="installBtn" class="btn btn-pwa">📲 Installa come App su Mac / Smartphone</button>
+    </div>
+
+    <div class="footer-time">Dati meteo: Open-Meteo · Allerte via Protezione Civile</div>
+  </div>
+
+  <script>
+    function switchTab(tabId, btnElement) {
+      var panes = document.querySelectorAll('.tab-pane');
+      for (var i = 0; i < panes.length; i++) { panes[i].classList.remove('active'); }
+      var btns = document.querySelectorAll('.tab-btn');
+      for (var j = 0; j < btns.length; j++) { btns[j].classList.remove('active'); }
+      
+      document.getElementById(tabId).classList.add('active');
+      btnElement.classList.add('active');
+
+      if (tabId === 'tab-live' && window.hourlyTemps24) {
+        setTimeout(function() { drawChart(window.hourlyTemps24, window.hourlyTimes24); }, 50);
+      }
+    }
+
+    function loadAlert() {
+      return fetch('./alert.json?v=' + new Date().getTime())
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var titleEl = document.getElementById('alertTitle');
+          var badgeEl = document.getElementById('alertBadge');
+          var summaryEl = document.getElementById('alertSummary');
+          var extTextEl = document.getElementById('alertDetailsText');
+          var iconEl = document.getElementById('alertIcon');
+          var timeEl = document.getElementById('updateTime');
+
+          if (timeEl && data.updated_at) timeEl.textContent = data.updated_at;
+          if (summaryEl && data.message) summaryEl.textContent = data.message;
+
+          var status = (data.status || 'VERDE').toUpperCase();
+
+          if (status === 'ARANCIONE') {
+            if (iconEl) iconEl.textContent = '⚠️';
+            if (titleEl) titleEl.textContent = 'Allerta meteo Arancione (Zona 2 - Agro Aversano)';
+            if (badgeEl) {
+              badgeEl.textContent = 'Moderata';
+              badgeEl.style.background = '#ffedd5';
+              badgeEl.style.color = '#c2410c';
+            }
+            if (extTextEl) extTextEl.textContent = "Stato di allerta ARANCIONE diramato dalla Protezione Civile Campania per la Zona 2. Verificare l'albo pretorio del Comune di Aversa per le ordinanze scolastiche.";
+          } else if (status === 'GIALLA') {
+            if (iconEl) iconEl.textContent = '⚠️';
+            if (titleEl) titleEl.textContent = 'Allerta meteo Gialla (Zona 2 - Agro Aversano)';
+            if (badgeEl) {
+              badgeEl.textContent = 'Ordinaria';
+              badgeEl.style.background = '#fef08a';
+              badgeEl.style.color = '#854d0e';
+            }
+            if (extTextEl) extTextEl.textContent = "Stato di allerta GIALLA per la Zona 2. Prestare attenzione durante gli spostamenti per locali allagamenti o rovesci.";
+          } else if (status === 'ROSSA') {
+            if (iconEl) iconEl.textContent = '🚨';
+            if (titleEl) titleEl.textContent = 'Allerta meteo Rossa (Zona 2 - Agro Aversano)';
+            if (badgeEl) {
+              badgeEl.textContent = 'Elevata';
+              badgeEl.style.background = '#fee2e2';
+              badgeEl.style.color = '#991b1b';
+            }
+            if (extTextEl) extTextEl.textContent = "CRITICITÀ ELEVATA diramata per il territorio. Consultare i canali comunali per l'ordinanza di chiusura delle strutture pubbliche.";
+          } else {
+            if (iconEl) iconEl.textContent = '✅';
+            if (titleEl) titleEl.textContent = 'Nessuna allerta meteo in vigore';
+            if (badgeEl) {
+              badgeEl.textContent = 'Verde';
+              badgeEl.style.background = '#bbf7d0';
+              badgeEl.style.color = '#166534';
+            }
+            if (!data.message && summaryEl) summaryEl.textContent = 'Condizioni meteorologiche nella norma per la Zona 2 (Agro Aversano).';
+            if (extTextEl) extTextEl.textContent = 'Non sono presenti allerte critiche o ordinanze comunali attive sul territorio di Aversa.';
+          }
+        })
+        .catch(function(err) {
+          console.warn("Errore caricamento alert.json:", err);
+        });
+    }
+
+    function loadMeteo() {
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m&daily=precipitation_sum&timezone=Europe%2FRome&forecast_days=3';
+      return fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data && data.current) {
+            document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
+            document.getElementById('windSpeed').textContent = data.current.wind_speed_10m + ' km/h';
+            document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
+            document.getElementById('rainAmount').textContent = ((data.daily && data.daily.precipitation_sum) ? data.daily.precipitation_sum[0] : 0) + ' mm';
+
+            var codes = {
+              0: 'Sereno', 1: 'Prevalentemente Sereno', 2: 'Poco Nuvoloso', 3: 'Coperto',
+              45: 'Nebbia', 51: 'Pioggerella', 61: 'Pioggia', 63: 'Pioggia Forte', 95: 'Temporale'
+            };
+            document.getElementById('weatherCondition').textContent = codes[data.current.weather_code] || 'Variabile';
+          }
+
+          if (data && data.hourly) {
+            window.hourlyTemps24 = data.hourly.temperature_2m.slice(0, 24);
+            window.hourlyTimes24 = data.hourly.time.slice(0, 24);
+
+            drawChart(window.hourlyTemps24, window.hourlyTimes24);
+            renderHourlyForecast(data.hourly);
+          }
+        })
+        .catch(function(err) {
+          console.error("Errore recupero meteo:", err);
+        });
+    }
+
+    function getWeatherDesc(code) {
+      var map = {
+        0: { text: 'Sereno', icon: '☀️' },
+        1: { text: 'Quasi Sereno', icon: '🌤️' },
+        2: { text: 'Poco Nuvoloso', icon: '⛅' },
+        3: { text: 'Coperto', icon: '☁️' },
+        45: { text: 'Nebbia', icon: '🌫️' },
+        51: { text: 'Pioggerella', icon: '🌧️' },
+        61: { text: 'Pioggia', icon: '🌧️' },
+        63: { text: 'Pioggia Forte', icon: '🌧️' },
+        80: { text: 'Rovesci', icon: '🌦️' },
+        95: { text: 'Temporale', icon: '⛈️' },
+        96: { text: 'Temporale Forte', icon: '⛈️' }
+      };
+      return map[code] || { text: 'Variabile', icon: '🌤️' };
+    }
+
+    function renderHourlyForecast(hourlyData) {
+      var container = document.getElementById('hourlyContainer');
+      if (!container || !hourlyData) return;
+      container.innerHTML = '';
+
+      var now = new Date();
+      var lastDayString = '';
+      var startIndex = 0;
+
+      for (var i = 0; i < hourlyData.time.length; i++) {
+        if (new Date(hourlyData.time[i]) >= now) {
+          startIndex = Math.max(0, i - 1);
+          break;
+        }
+      }
+
+      var hoursToDisplay = hourlyData.time.slice(startIndex, startIndex + 48);
+
+      for (var idx = 0; idx < hoursToDisplay.length; idx++) {
+        var realIdx = startIndex + idx;
+        var dateObj = new Date(hoursToDisplay[idx]);
+
+        var options = { weekday: 'long', day: 'numeric', month: 'short' };
+        var dayString = dateObj.toLocaleDateString('it-IT', options);
+
+        if (dayString !== lastDayString) {
+          lastDayString = dayString;
+          var header = document.createElement('div');
+          header.className = 'day-header';
+          header.textContent = dayString.toUpperCase();
+          container.appendChild(header);
+        }
+
+        var hoursFormatted = (dateObj.getHours() < 10 ? '0' : '') + dateObj.getHours() + ':00';
+        var weatherInfo = getWeatherDesc(hourlyData.weather_code[realIdx]);
+        var temp = Math.round(hourlyData.temperature_2m[realIdx]);
+        var rainProb = hourlyData.precipitation_probability ? hourlyData.precipitation_probability[realIdx] : 0;
+
+        var row = document.createElement('div');
+        row.className = 'hourly-row';
+        row.innerHTML = '<span class="hourly-time">' + hoursFormatted + '</span>' +
+                        '<span class="hourly-icon-desc"><span>' + weatherInfo.icon + '</span> ' + weatherInfo.text + '</span>' +
+                        '<span class="hourly-rain">' + (rainProb > 0 ? '💧 ' + rainProb + '%' : '') + '</span>' +
+                        '<span class="hourly-temp">' + temp + '°</span>';
+        container.appendChild(row);
+      }
+    }
+
+    /* Rendering Grafico Canvas ad Alto Contrasto con Scale Assi X e Y */
+    function drawChart(temps, times) {
+      var canvas = document.getElementById('tempChart');
+      if (!canvas || !temps || temps.length === 0) return;
+
+      var ctx = canvas.getContext('2d');
+      var dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      var w = canvas.offsetWidth;
+      var h = canvas.offsetHeight;
+      if (w === 0 || h === 0) return;
+
+      var paddingTop = 22;
+      var paddingBottom = 26;
+      var paddingLeft = 36;
+      var paddingRight = 12;
+
+      var graphWidth = w - paddingLeft - paddingRight;
+      var graphHeight = h - paddingTop - paddingBottom;
+
+      var minTemp = Math.min.apply(null, temps);
+      var maxTemp = Math.max.apply(null, temps);
+      var range = (maxTemp - minTemp) || 1;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. Griglia orizzontale e valori Y (Scale ordinate °C)
+      ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillStyle = '#334155';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+
+      var midTemp = Math.round((maxTemp + minTemp) / 2);
+      var yTicks = [maxTemp, midTemp, minTemp];
+      var uniqueTicks = yTicks.filter(function(v, i, self) { return self.indexOf(v) === i; });
+
+      uniqueTicks.forEach(function(tVal) {
+        var yPos = paddingTop + graphHeight - ((tVal - minTemp) / range) * graphHeight;
+        
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.12)';
+        ctx.moveTo(paddingLeft, yPos);
+        ctx.lineTo(w - paddingRight, yPos);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillText(Math.round(tVal) + '°', paddingLeft - 6, yPos);
+      });
+
+      // 2. Disegno della curva e riempimento sfumato
+      var points = [];
+      for (var i = 0; i < temps.length; i++) {
+        var x = paddingLeft + (i / (temps.length - 1)) * graphWidth;
+        var y = paddingTop + graphHeight - ((temps[i] - minTemp) / range) * graphHeight;
+        points.push({ x: x, y: y, temp: temps[i] });
+      }
+
+      var grad = ctx.createLinearGradient(0, paddingTop, 0, h - paddingBottom);
+      grad.addColorStop(0, 'rgba(2, 132, 199, 0.32)');
+      grad.addColorStop(1, 'rgba(2, 132, 199, 0.02)');
+
+      ctx.beginPath();
+      for (var j = 0; j < points.length; j++) {
+        if (j === 0) ctx.moveTo(points[j].x, points[j].y);
+        else ctx.lineTo(points[j].x, points[j].y);
+      }
+
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 2.8;
+      ctx.stroke();
+
+      ctx.lineTo(points[points.length - 1].x, h - paddingBottom);
+      ctx.lineTo(points[0].x, h - paddingBottom);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Linea base ascisse
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.moveTo(paddingLeft, h - paddingBottom);
+      ctx.lineTo(w - paddingRight, h - paddingBottom);
+      ctx.stroke();
+
+      // 3. Etichette orario X (Scale ascisse)
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = '#475569';
+      ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+      var stepIndexes = [0, 6, 12, 18, 23];
+      stepIndexes.forEach(function(idx) {
+        if (idx < points.length) {
+          var pt = points[idx];
+          var labelText = '';
+          if (times && times[idx]) {
+            var d = new Date(times[idx]);
+            labelText = (d.getHours() < 10 ? '0' : '') + d.getHours() + ':00';
+          } else {
+            labelText = idx + 'h';
+          }
+          ctx.fillText(labelText, pt.x, h - paddingBottom + 6);
+        }
+      });
+
+      // 4. Evidenzia punti di Max e Min sulla curva
+      var maxIdx = temps.indexOf(maxTemp);
+      var minIdx = temps.indexOf(minTemp);
+
+      [maxIdx, minIdx].forEach(function(pIdx) {
+        if (pIdx >= 0 && pIdx < points.length) {
+          var p = points[pIdx];
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+          ctx.fillStyle = '#0284c7';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+        }
+      });
+    }
+
+    function manualRefresh() {
+      var btn = document.getElementById('refreshBtn');
+      if (btn) btn.classList.add('spinning');
+
+      Promise.all([loadAlert(), loadMeteo()])
+        .then(function() {
+          setTimeout(function() {
+            if (btn) btn.classList.remove('spinning');
+          }, 600);
+        })
+        .catch(function() {
+          if (btn) btn.classList.remove('spinning');
+        });
+    }
+
+    var deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      var btn = document.getElementById('installBtn');
+      if (btn) {
+        btn.style.display = 'flex';
+        btn.onclick = function() {
+          btn.style.display = 'none';
+          deferredPrompt.prompt();
+        };
+      }
+    });
+
+    loadAlert();
+    loadMeteo();
+
+    setInterval(manualRefresh, 300000);
+  </script>
+</body>
+</html>
