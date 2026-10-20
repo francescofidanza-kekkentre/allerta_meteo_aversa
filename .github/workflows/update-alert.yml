@@ -15,11 +15,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Scansione Precisa DPC e RSS Campania
+      - name: Scansione Testo Grezzo Portale Campania
         run: |
           python3 -c "
-          import urllib.request, json, datetime, ssl, re
-          import xml.etree.ElementTree as ET
+          import urllib.request, json, datetime, ssl
 
           ctx = ssl.create_default_context()
           ctx.check_hostname = False
@@ -28,75 +27,39 @@ jobs:
           headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
           status = 'VERDE'
           msg = 'Nessuna allerta critica per Aversa (Zona 2)'
-          found = False
 
-          # 1. Scansione OpenData DPC Nazionale (estensione corretta .geojson)
-          dpc_urls = [
-              'https://raw.githubusercontent.com/pcm-dpc/DPC-Bollettini-Criticita-Idrogeologica-Idraulica/master/latest/today_today.geojson',
-              'https://raw.githubusercontent.com/pcm-dpc/DPC-Bollettini-Criticita-Idrogeologica-Idraulica/master/latest/today_tomorrow.geojson'
+          # URL diretti del Centro Funzionale Campania
+          urls = [
+              'http://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
+              'http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo',
+              'http://centrofunzionale.regione.campania.it/it/avvisi/avvisi-di-allerta-meteo'
           ]
 
-          crit_levels = []
-          for url in dpc_urls:
+          raw_text = ''
+          for url in urls:
               try:
                   req = urllib.request.Request(url, headers=headers)
-                  with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
-                      data = json.loads(resp.read().decode('utf-8'))
-                      for feat in data.get('features', []):
-                          p = feat.get('properties', {})
-                          # Cerca la Campania / Zona 2 (Agro Aversano)
-                          z_code = str(p.get('ID_ZONA', '')).upper()
-                          z_name = str(p.get('NOME_ZONA', '')).lower()
-                          if 'cam-2' in z_code or 'zona 2' in z_name or 'camp-2' in z_code:
-                              c_idro = str(p.get('CRITICITA_IDRO', '')).lower()
-                              c_idraul = str(p.get('CRITICITA_IDRAULICA', '')).lower()
-                              c_temp = str(p.get('CRITICITA_TEMPORALI', '')).lower()
-                              full_z = f'{c_idro} {c_idraul} {c_temp}'
-                              
-                              if 'elevata' in full_z or 'rossa' in full_z:
-                                  crit_levels.append('ROSSA')
-                              elif 'moderata' in full_z or 'arancione' in full_z:
-                                  crit_levels.append('ARANCIONE')
-                              elif 'ordinaria' in full_z or 'gialla' in full_z:
-                                  crit_levels.append('GIALLA')
+                  with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
+                      content = resp.read().decode('utf-8', errors='ignore')
+                      raw_text += ' ' + content
+                      print(f'>>> Caricato: {url} ({len(content)} caratteri)')
               except Exception as e:
-                  print(f'Errore DPC URL {url}: {e}')
+                  print(f'>>> Errore caricamento {url}: {e}')
 
-          if crit_levels:
-              found = True
-              if 'ROSSA' in crit_levels:
-                  status, msg = 'ROSSA', '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
-              elif 'ARANCIONE' in crit_levels:
-                  status, msg = 'ARANCIONE', '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
-              elif 'GIALLA' in crit_levels:
-                  status, msg = 'GIALLA', '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
+          text_lower = raw_text.lower()
 
-          # 2. Scansione RSS Campania mirata sui soli messaggi ufficiali
-          if not found:
-              rss_url = 'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo'
-              try:
-                  req = urllib.request.Request(rss_url, headers=headers)
-                  with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
-                      xml_data = resp.read()
-                      root = ET.fromstring(xml_data)
-                      titles_texts = []
-                      for item in root.findall('.//item'):
-                          t = item.find('title')
-                          d = item.find('description')
-                          if t is not None and t.text: titles_texts.append(t.text.lower())
-                          if d is not None and d.text: titles_texts.append(d.text.lower())
-                      
-                      rss_content = ' '.join(titles_texts)
-                      if 'arancion' in rss_content or 'moderata critic' in rss_content:
-                          status, msg = 'ARANCIONE', '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
-                      elif 'giall' in rss_content or 'ordinaria critic' in rss_content:
-                          status, msg = 'GIALLA', '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
-                      elif 'ross' in rss_content or 'elevata critic' in rss_content:
-                          status, msg = 'ROSSA', '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
-              except Exception as e:
-                  print(f'Errore RSS: {e}')
+          # Ricerca parole chiave nel testo (senza parsing XML)
+          if 'arancion' in text_lower or 'preallarme' in text_lower or 'moderata critic' in text_lower:
+              status = 'ARANCIONE'
+              msg = '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
+          elif 'giall' in text_lower or 'attenzione' in text_lower or 'ordinaria critic' in text_lower:
+              status = 'GIALLA'
+              msg = '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
+          elif 'ross' in text_lower or 'allarme' in text_lower or 'elevata critic' in text_lower:
+              status = 'ROSSA'
+              msg = '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
 
-          print(f'>>> ESITO FINALE: {status} - {msg}')
+          print(f'>>> ESITO FINALE RILEVATO: {status} - {msg}')
 
           out = {
               'status': status,
