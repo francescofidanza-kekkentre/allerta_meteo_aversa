@@ -2,7 +2,7 @@ name: Aggiorna Allerta Meteo Aversa
 
 on:
   schedule:
-    - cron: '0 * * * *' # Esecuzione automatica ogni ora
+    - cron: '0 * * * *' # Esecuzione ogni ora
   workflow_dispatch: # Avvio manuale
 
 permissions:
@@ -15,61 +15,60 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Controllo Bollettino Protezione Civile
+      - name: Scansione Bollettini e Termini Tecnici Protezione Civile
         run: |
           python3 -c "
           import urllib.request, json, datetime, ssl
 
-          # Bypass verifica SSL per i server regionali
           ctx = ssl.create_default_context()
           ctx.check_hostname = False
           ctx.verify_mode = ssl.CERT_NONE
 
-          status = 'VERDE'
-          msg = 'Nessuna allerta critica per la Zona 2 (Agro Aversano)'
-          headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+          headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
-          # Sorgenti ufficiali: 1) OpenData DPC Nazionale, 2) Portale Campania HTTPS, 3) Feed RSS
+          status = 'VERDE'
+          msg = 'Nessuna allerta critica per Aversa / Zona 2'
+
+          # Fonti: Open Data DPC Nazionale + Portale Campania + Feed RSS
           urls = [
               'https://raw.githubusercontent.com/pcm-dpc/DPC-Bollettini-Criticita-Idrogeologica-Idraulica/master/latest/bollettino.json',
-              'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo',
-              'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo'
+              'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
+              'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo'
           ]
 
-          full_content = ''
+          fetched = []
           for url in urls:
               try:
                   req = urllib.request.Request(url, headers=headers)
                   with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
-                      text = resp.read().decode('utf-8', errors='ignore')
-                      full_content += ' ' + text
+                      fetched.append(resp.read().decode('utf-8', errors='ignore'))
               except Exception as e:
-                  print(f'Errore caricamento {url}: {e}')
+                  print(f'Errore {url}: {e}')
 
-          text_lower = full_content.lower()
+          text = ' '.join(fetched).lower()
 
-          # Valutazione priorità allerta per la Campania / Zona 2
-          if 'arancione' in text_lower or 'allarme' in text_lower:
-              status = 'ARANCIONE'
-              msg = '🚨 ALLERTA ARANCIONE per la Zona 2 (Agro Aversano)'
-          elif 'gialla' in text_lower or 'attenzione' in text_lower:
-              status = 'GIALLA'
-              msg = '⚠️ ALLERTA GIALLA per la Zona 2 (Agro Aversano)'
-          elif 'rossa' in text_lower:
+          # Valutazione con termini tecnici e colori ufficiali
+          if any(k in text for k in ['rossa', 'elevata criticita', 'elevata criticità', 'fase di allarme']):
               status = 'ROSSA'
-              msg = '🔴 ALLERTA ROSSA per la Zona 2 (Agro Aversano)'
+              msg = '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
+          elif any(k in text for k in ['arancione', 'moderata criticita', 'moderata criticità', 'preallarme']):
+              status = 'ARANCIONE'
+              msg = '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
+          elif any(k in text for k in ['gialla', 'ordinaria criticita', 'ordinaria criticità', 'fase di attenzione']):
+              status = 'GIALLA'
+              msg = '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
 
-          data = {
+          out = {
               'status': status,
               'message': msg,
               'updated_at': datetime.datetime.now().strftime('%d/%m/%Y %H:%M')
           }
 
           with open('alert.json', 'w', encoding='utf-8') as f:
-              json.dump(data, f, ensure_ascii=False, indent=2)
+              json.dump(out, f, ensure_ascii=False, indent=2)
           "
 
-      - name: Salvataggio file alert.json
+      - name: Salvataggio alert.json
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
