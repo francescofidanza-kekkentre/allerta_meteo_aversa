@@ -33,7 +33,7 @@
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
     }
 
-    /* Header Mac */
+    /* macOS Header */
     .mac-header {
       display: flex;
       align-items: center;
@@ -47,7 +47,32 @@
     .dot-green { background: #27c93f; }
     .header-title { font-size: 13px; font-weight: 600; color: #64748b; }
 
-    /* Header Sezione Allerte Stile Base44 */
+    /* Pulsante di Aggiornamento Manuale */
+    .refresh-btn {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s, transform 0.2s;
+      outline: none;
+    }
+    .refresh-btn:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+    .refresh-btn.spinning {
+      animation: spinAnim 0.8s linear infinite;
+    }
+    @keyframes spinAnim {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .alert-section-header {
       display: flex;
       justify-content: space-between;
@@ -111,7 +136,6 @@
       color: #475569;
     }
 
-    /* Testo Dettagliato Esteso sotto la Card */
     .alert-extended-text {
       font-size: 12px;
       line-height: 1.55;
@@ -120,7 +144,6 @@
       padding: 0 2px;
     }
 
-    /* Meteo Live */
     .meteo-box {
       background: #f8fafc;
       border: 1px solid #f1f5f9;
@@ -147,7 +170,6 @@
     .stat-label { font-size: 10px; color: #64748b; display: block; margin-bottom: 2px; }
     .stat-val { font-size: 12px; font-weight: 700; color: #0f172a; }
 
-    /* Pulsante Link Ufficiale HTTPS */
     .btn-link {
       display: flex;
       align-items: center;
@@ -168,7 +190,7 @@
 <body>
 
   <div class="widget-container">
-    <!-- Header Mac -->
+    <!-- Header Mac con Tasto Refresh -->
     <div class="mac-header">
       <div class="dots">
         <span class="dot dot-red"></span>
@@ -176,12 +198,12 @@
         <span class="dot dot-green"></span>
       </div>
       <div class="header-title">Meteo Aversa</div>
+      <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
     </div>
 
-    <!-- Sezione Allerte in Vigore (Base44 Style) -->
     <div class="alert-section-header">
       <span class="section-label">Allerte in Vigore</span>
-      <span class="update-time-top" id="updateTime">--/--/--, --:--</span>
+      <span class="update-time-top" id="updateTime">In verifica...</span>
     </div>
 
     <div class="base44-alert-card" id="alertCard">
@@ -197,7 +219,6 @@
       Caricamento informazioni di Protezione Civile per il comune di Aversa...
     </div>
 
-    <!-- Meteo Live -->
     <div class="meteo-box">
       <div class="city-name">Aversa</div>
       <div class="temp-large" id="currentTemp">--°</div>
@@ -219,15 +240,14 @@
       </div>
     </div>
 
-    <!-- Pulsante Diretto HTTPS -->
     <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener noreferrer" class="btn-link">
-      🌐 Bollettino Ufficiale Protezione Civile
+      🌐 Portale Protezione Civile Campania
     </a>
   </div>
 
   <script>
     function loadAlert() {
-      fetch('./alert.json?v=' + new Date().getTime())
+      return fetch('./alert.json?v=' + new Date().getTime())
         .then(function(res) { return res.json(); })
         .then(function(data) {
           var titleEl = document.getElementById('alertTitle');
@@ -246,7 +266,7 @@
             badgeEl.style.background = '#ffedd5';
             badgeEl.style.color = '#c2410c';
             summaryEl.textContent = 'Previsti temporali di forte intensità con possibili rischi legati a precipitazioni concentrate. Disposta la chiusura di scuole, parchi e cimitero comunale ad Aversa.';
-            extTextEl.textContent = "La Protezione Civile della Regione Campania ha diramato un'allerta meteo di colore arancione per la giornata odierna, a causa di previsti temporali di forte intensità. Il comune di Aversa ha disposto la chiusura di scuole, parchi pubblici e del cimitero comunale per l'intera giornata.";
+            extTextEl.textContent = "La Protezione Civile della Regione Campania ha diramato un'allerta meteo di colore arancione per la giornata odierna. Il comune di Aversa ha disposto la chiusura di scuole, parchi pubblici e del cimitero comunale per l'intera giornata.";
           } else if (data.status === 'GIALLA') {
             iconEl.textContent = '⚠️';
             titleEl.textContent = 'Allerta meteo gialla per temporali';
@@ -262,7 +282,7 @@
             badgeEl.style.background = '#fee2e2';
             badgeEl.style.color = '#991b1b';
             summaryEl.textContent = 'Precipitazioni ed eventi estremi diffusi. Si raccomanda di evitare qualsiasi spostamento.';
-            extTextEl.textContent = "La Protezione Civile della Regione Campania ha diramato il livello massimo di allerta. Chiusura totale delle scuole e delle attività pubbliche ad Aversa.";
+            extTextEl.textContent = "La Protezione Civile della Regione Campania ha diramato il livello massimo di allerta per il territorio.";
           } else {
             iconEl.textContent = '✅';
             titleEl.textContent = 'Nessuna allerta meteo in vigore';
@@ -280,7 +300,7 @@
 
     function loadMeteo() {
       var url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=precipitation_sum&timezone=Europe%2FRome';
-      fetch(url)
+      return fetch(url)
         .then(function(res) { return res.json(); })
         .then(function(data) {
           document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
@@ -296,8 +316,31 @@
         });
     }
 
+    /* Funzione di Aggiornamento Manuale */
+    function manualRefresh() {
+      var btn = document.getElementById('refreshBtn');
+      if (btn) btn.classList.add('spinning');
+
+      Promise.all([loadAlert(), loadMeteo()])
+        .then(function() {
+          setTimeout(function() {
+            if (btn) btn.classList.remove('spinning');
+          }, 600);
+        })
+        .catch(function() {
+          if (btn) btn.classList.remove('spinning');
+        });
+    }
+
+    // Caricamento iniziale
     loadAlert();
     loadMeteo();
+
+    // Auto-aggiornamento periodico ogni 5 minuti (300.000 ms)
+    setInterval(function() {
+      loadAlert();
+      loadMeteo();
+    }, 300000);
   </script>
 </body>
 </html>
