@@ -2,8 +2,8 @@ name: Aggiorna Allerta Meteo Aversa
 
 on:
   schedule:
-    - cron: '0 * * * *'
-  workflow_dispatch:
+    - cron: '0 * * * *' # Esecuzione automatica ogni ora
+  workflow_dispatch: # Avvio manuale
 
 permissions:
   contents: write
@@ -15,51 +15,62 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Scansione Testo Grezzo Portale Campania
+      - name: Configurazione Python e Dipendenze
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Installazione Librerie Scraper
+        run: pip install requests beautifulsoup4
+
+      - name: Scansione Intelligente Allerte Campania
         run: |
           python3 -c "
-          import urllib.request, json, datetime, ssl
+          import requests, json, datetime
+          from bs4 import BeautifulSoup
 
-          ctx = ssl.create_default_context()
-          ctx.check_hostname = False
-          ctx.verify_mode = ssl.CERT_NONE
+          headers = {
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
+          }
 
-          headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
           status = 'VERDE'
           msg = 'Nessuna allerta critica per Aversa (Zona 2)'
 
-          # URL diretti del Centro Funzionale Campania
           urls = [
-              'http://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
-              'http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo',
-              'http://centrofunzionale.regione.campania.it/it/avvisi/avvisi-di-allerta-meteo'
+              'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
+              'https://centrofunzionale.regione.campania.it/it/avvisi/avvisi-di-allerta-meteo',
+              'https://www.regione.campania.it/regione/it/news/protezione-civile-1'
           ]
 
-          raw_text = ''
+          extracted_text = ''
           for url in urls:
               try:
-                  req = urllib.request.Request(url, headers=headers)
-                  with urllib.request.urlopen(req, timeout=12, context=ctx) as resp:
-                      content = resp.read().decode('utf-8', errors='ignore')
-                      raw_text += ' ' + content
-                      print(f'>>> Caricato: {url} ({len(content)} caratteri)')
+                  res = requests.get(url, headers=headers, timeout=15, verify=False)
+                  if res.status_code == 200:
+                      soup = BeautifulSoup(res.text, 'html.parser')
+                      # Rimuove script e stili CSS
+                      for element in soup(['script', 'style', 'nav', 'footer']):
+                          element.decompose()
+                      text = soup.get_text(separator=' ').lower()
+                      extracted_text += ' ' + text
+                      print(f'>>> Caricato con successo: {url} ({len(text)} caratteri di testo reale)')
               except Exception as e:
-                  print(f'>>> Errore caricamento {url}: {e}')
+                  print(f'>>> Errore su {url}: {e}')
 
-          text_lower = raw_text.lower()
-
-          # Ricerca parole chiave nel testo (senza parsing XML)
-          if 'arancion' in text_lower or 'preallarme' in text_lower or 'moderata critic' in text_lower:
+          # Analisi precisa sui soli avvisi attivi
+          if 'arancion' in extracted_text or 'preallarme' in extracted_text or 'moderata critic' in extracted_text:
               status = 'ARANCIONE'
               msg = '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
-          elif 'giall' in text_lower or 'attenzione' in text_lower or 'ordinaria critic' in text_lower:
+          elif 'giall' in extracted_text or 'ordinaria critic' in extracted_text:
               status = 'GIALLA'
               msg = '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
-          elif 'ross' in text_lower or 'allarme' in text_lower or 'elevata critic' in text_lower:
+          elif 'ross' in extracted_text or 'elevata critic' in extracted_text:
               status = 'ROSSA'
               msg = '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
 
-          print(f'>>> ESITO FINALE RILEVATO: {status} - {msg}')
+          print(f'>>> ESITO RILEVATO: {status} - {msg}')
 
           out = {
               'status': status,
