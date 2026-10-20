@@ -75,7 +75,7 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Segmented Control / Tab Switcher Stile macOS */
+    /* Segmented Control / Tab Switcher Stile macOS (Schede 50/50 uguali) */
     .tab-bar {
       display: flex;
       background: rgba(0, 0, 0, 0.05);
@@ -84,10 +84,12 @@
       padding: 3px;
       margin-bottom: 16px;
       gap: 4px;
+      width: 100%;
     }
 
     .tab-btn {
-      flex: 1;
+      flex: 1 1 0;
+      width: 50%;
       padding: 8px 10px;
       font-size: 12px;
       font-weight: 600;
@@ -98,6 +100,9 @@
       cursor: pointer;
       transition: all 0.2s ease;
       text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .tab-btn.active {
@@ -472,7 +477,7 @@
           renderHourlyForecast(data.hourly);
         })
         .catch(function(err) {
-          console.error("Errore recupero meteo:", e);
+          console.error("Errore recupero meteo:", err);
         });
     }
 
