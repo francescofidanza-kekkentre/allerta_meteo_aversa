@@ -111,7 +111,11 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
-    .tab-pane { display: none; }
+    /* Dimensione Verticale Uniforme per i Tab */
+    .tab-pane { 
+      display: none; 
+      min-height: 520px; 
+    }
     .tab-pane.active { display: block; }
 
     /* Sezione Allerta Stile Base44 */
@@ -209,7 +213,7 @@
     .stat-label { font-size: 11px; color: #64748b; display: block; margin-bottom: 4px; font-weight: 500; }
     .stat-val { font-size: 13px; font-weight: 700; color: #1e293b; }
 
-    /* Grafico 24h con Scale Assi Visibili */
+    /* Grafico 24h */
     .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .chart-box {
       background: rgba(255, 255, 255, 0.75);
@@ -220,9 +224,9 @@
     }
     canvas { width: 100% !important; height: 135px !important; display: block; }
 
-    /* Lista Ora per Ora (48h) */
+    /* Lista Ora per Ora (48h) con altezza abbinata al Tab 1 */
     .hourly-scroll {
-      max-height: 340px;
+      height: 480px;
       overflow-y: auto;
       padding-right: 4px;
       display: flex;
@@ -364,7 +368,7 @@
         </div>
       </div>
 
-      <!-- Grafico Temperature 24 Ore con Scale Assi -->
+      <!-- Grafico Temperature 24 Ore -->
       <div class="sec-title">Evoluzione Temperature (24h)</div>
       <div class="chart-box">
         <canvas id="tempChart"></canvas>
