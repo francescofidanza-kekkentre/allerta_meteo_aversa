@@ -26,7 +26,7 @@ jobs:
           playwright install chromium
           playwright install-deps
 
-      - name: Scansione con Browser Reale (Playwright)
+      - name: Scansione Completa di Tutti gli iFrame
         run: |
           python3 -c "
           import json, datetime
@@ -36,6 +36,7 @@ jobs:
           msg = 'Nessuna allerta critica per Aversa (Zona 2)'
 
           urls = [
+              'https://centrofunzionale.regione.campania.it/',
               'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo',
               'https://centrofunzionale.regione.campania.it/it/avvisi/avvisi-di-allerta-meteo',
               'https://www.regione.campania.it/regione/it/news/protezione-civile-1'
@@ -53,11 +54,20 @@ jobs:
               for url in urls:
                   try:
                       print(f'>>> Apertura browser su: {url}')
-                      page.goto(url, timeout=30000, wait_until='domcontentloaded')
-                      page.wait_for_timeout(4000) # Attesa esecuzione script dinamici
-                      text = page.inner_text('body').lower()
-                      full_text += ' ' + text
-                      print(f'    Estratti {len(text)} caratteri di testo reale!')
+                      page.goto(url, timeout=35000, wait_until='networkidle')
+                      page.wait_for_timeout(3000)
+
+                      # Scansione di TUTTI i sotto-frame/iframe della pagina
+                      site_text = ''
+                      for frame in page.frames:
+                          try:
+                              f_text = frame.inner_text('body')
+                              site_text += ' ' + f_text
+                          except Exception:
+                              pass
+
+                      full_text += ' ' + site_text.lower()
+                      print(f'    Estratti {len(site_text)} caratteri (inclusi tutti gli iFrame)!')
                   except Exception as e:
                       print(f'    Errore su {url}: {e}')
 
