@@ -18,27 +18,51 @@ async function runScraper() {
     });
     const page = await context.newPage();
 
-    // METODO 1: Scraping Bollettino Protezione Civile Campania
+    // METODO 1: Scraping Bollettino Protezione Civile Campania (Attuale & Previsto)
     console.log('1. Controllo Bollettino Protezione Civile Campania...');
     try {
-      await page.goto('https://centrofunzionale.regione.campania.it/', { timeout: 30000, waitUntil: 'domcontentloaded' });
-      const content = await page.textContent('body');
+      await page.goto('https://centrofunzionale.regione.campania.it/', { timeout: 35000, waitUntil: 'networkidle' });
+      
+      const fullText = await page.textContent('body');
 
-      if (/ARANCIONE/i.test(content) && /Zona 2|Agro Aversano/i.test(content)) {
-        statusAllerta = 'ARANCIONE';
-        dettaglioAllerta = 'Previsti temporali di forte intensità con rischio idrogeologico sulla Zona 2.';
-      } else if (/GIALLA/i.test(content) && /Zona 2|Agro Aversano/i.test(content)) {
-        statusAllerta = 'GIALLA';
-        dettaglioAllerta = 'Previsti fenomeni temporaleschi e locali allagamenti per la Zona 2.';
-      } else if (/ROSSA/i.test(content) && /Zona 2|Agro Aversano/i.test(content)) {
-        statusAllerta = 'ROSSA';
-        dettaglioAllerta = 'Allerta di livello massimo diramata per il territorio.';
+      // Helper per valutare la gravità del livello
+      function getLevelScore(text) {
+        if (/ROSSA/i.test(text)) return 3;
+        if (/ARANCIONE/i.test(text)) return 2;
+        if (/GIALLA/i.test(text)) return 1;
+        return 0;
       }
+
+      let maxScore = 0;
+
+      // Analizza tutto il testo visibile nella pagina cercando i blocchi di allerta
+      if (/ARANCIONE/i.test(fullText)) {
+        maxScore = Math.max(maxScore, 2);
+      }
+      if (/ROSSA/i.test(fullText)) {
+        maxScore = Math.max(maxScore, 3);
+      }
+      if (/GIALLA/i.test(fullText) && maxScore < 1) {
+        maxScore = 1;
+      }
+
+      // Assegna lo stato in base al rischio più alto (Attuale o Previsto)
+      if (maxScore === 3) {
+        statusAllerta = 'ROSSA';
+        dettaglioAllerta = 'Allerta meteo ROSSA (Criticità Elevata) prevista/in vigore per la Zona 2 (Agro Aversano).';
+      } else if (maxScore === 2) {
+        statusAllerta = 'ARANCIONE';
+        dettaglioAllerta = 'Allerta meteo ARANCIONE per rischio idrogeologico e temporali prevista/in vigore per la Zona 2 (Agro Aversano).';
+      } else if (maxScore === 1) {
+        statusAllerta = 'GIALLA';
+        dettaglioAllerta = 'Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 2 (Agro Aversano).';
+      }
+
     } catch (e) {
       console.warn('⚠️ Errore durante lo scraping della Protezione Civile:', e.message);
     }
 
-    // Se l'allerta non è verde, esegue i controlli per le scuole ad Aversa
+    // Se c'è un'allerta (Gialla, Arancione o Rossa), verifica le ordinanze comunali sulle scuole
     if (statusAllerta !== 'VERDE') {
       
       // METODO 2: Scraping Albo Pretorio / Notizie del Comune di Aversa
@@ -84,7 +108,7 @@ async function runScraper() {
     if (browser) await browser.close();
   }
 
-  // Costruzione del messaggio per il riquadro giallo
+  // Costruzione del messaggio per il riquadro giallo della PWA
   let messaggioFinale = dettaglioAllerta;
   if (infoOrdinanzaScuole) {
     messaggioFinale += ' ' + infoOrdinanzaScuole;
