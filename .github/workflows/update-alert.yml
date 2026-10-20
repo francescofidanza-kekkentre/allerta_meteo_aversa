@@ -2,9 +2,11 @@ name: Scraping Meteo & Allerte Aversa
 
 on:
   schedule:
-    # Esegue lo script ogni ora (al minuto 0)
     - cron: '0 * * * *'
-  workflow_dispatch: # Permette di avviare lo script anche manualmente con un click
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   scrape-job:
