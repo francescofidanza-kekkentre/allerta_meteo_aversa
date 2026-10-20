@@ -2,83 +2,106 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meteo & Allerte Aversa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Meteo & Allerte Aversa - macOS Widget</title>
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#121212">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png">
   <style>
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 25px; width: 90%; max-width: 380px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .alert-banner { padding: 16px; border-radius: 16px; font-weight: bold; margin: 15px 0; font-size: 15px; transition: all 0.3s; text-align: center; }
-    .status-VERDE { background: rgba(76, 175, 80, 0.2); color: #81c784; border: 1px solid #4caf50; }
-    .status-GIALLA { background: rgba(255, 179, 0, 0.2); color: #ffd54f; border: 1px solid #ffb300; }
-    .status-ARANCIONE { background: rgba(255, 87, 34, 0.25); color: #ff8a65; border: 1px solid #ff5722; animation: pulse 2s infinite; }
-    .status-ROSSA { background: rgba(229, 57, 53, 0.3); color: #e57373; border: 1px solid #e53935; animation: pulse 1s infinite; }
-    @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
-    .temp { font-size: 54px; font-weight: bold; margin: 10px 0; }
-    .stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; margin-bottom: 15px; font-size: 14px; }
-    .btn { display: block; background: #007aff; color: white; text-decoration: none; padding: 14px; border-radius: 14px; font-weight: 600; margin-top: 10px; border: none; width: 100%; box-sizing: border-box; cursor: pointer; }
-    .updated { font-size: 11px; color: #888; margin-top: 12px; }
-  </style>
-</head>
-<body>
-
-  <div class="card">
-    <h2>Aversa (CE)</h2>
-    <div id="alertBox" class="alert-banner status-VERDE">Caricamento allerta...</div>
-
-    <div class="temp" id="temp">--°C</div>
-    <div class="stats">
-      <div>Vento: <b id="wind">--</b></div>
-      <div>Pioggia: <b id="rain">--</b></div>
-    </div>
-
-    <a href="http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo" target="_blank" class="btn" style="background: rgba(255,255,255,0.1); margin-bottom: 10px;">📄 Bollettino Ufficiale PDF</a>
-    <button id="installBtn" class="btn" style="display:none;">📲 Installa App</button>
-    <div class="updated" id="lastUpdate">Ultimo controllo: --</div>
-  </div>
-
-  <script>
-    // 1. Legge lo stato dell'allerta dal file JSON generato dal backend GitHub
-    async function loadAlert() {
-      try {
-        const res = await fetch('./alert.json?v=' + new Date().getTime());
-        const data = await res.json();
-        const box = document.getElementById('alertBox');
-        box.className = 'alert-banner status-' + data.status;
-        box.innerHTML = data.message;
-        document.getElementById('lastUpdate').textContent = 'Ultima verifica: ' + data.updated_at;
-      } catch (e) {
-        document.getElementById('alertBox').textContent = '⚠️ Errore lettura allerta';
-      }
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+      --glass-bg: rgba(30, 41, 59, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
     }
 
-    // 2. Legge i dati meteorologici in tempo reale
-    async function loadWeather() {
-      try {
-        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=40.97&longitude=14.20&current_weather=true&daily=precipitation_sum&timezone=Europe/Rome');
-        const data = await res.json();
-        document.getElementById('temp').textContent = Math.round(data.current_weather.temperature) + '°C';
-        document.getElementById('wind').textContent = data.current_weather.windspeed + ' km/h';
-        document.getElementById('rain').textContent = (data.daily.precipitation_sum[0] || 0) + ' mm';
-      } catch (e) {}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 10px;
+      overflow-x: hidden;
     }
 
-    loadAlert();
-    loadWeather();
+    /* Widget Glassmorphism macOS */
+    .widget-container {
+      background: var(--glass-bg);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      position: relative;
+    }
 
-    // PWA Install Prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const btn = document.getElementById('installBtn');
-      btn.style.display = 'block';
-      btn.onclick = () => {
-        btn.style.display = 'none';
-        deferredPrompt.prompt();
-      };
-    });
-  </script>
-</body>
-</html>
+    /* Barra superiore stile finestra Mac */
+    .mac-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .traffic-lights { display: flex; gap: 8px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .dot-red { background: #ff5f56; border: 0.5px solid #e0443e; }
+    .dot-yellow { background: #ffbd2e; border: 0.5px solid #dea123; }
+    .dot-green { background: #27c93f; border: 0.5px solid #1aab29; }
+    .location-title { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; color: var(--text-sub); }
+
+    /* Banner Allerta Dinamico */
+    .alert-banner {
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .status-VERDE {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+    }
+    .status-GIALLA {
+      background: rgba(234, 179, 8, 0.2);
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      color: #fde047;
+    }
+    .status-ARANCIONE {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.3), rgba(234, 88, 12, 0.2));
+      border: 1px solid rgba(249, 115, 22, 0.5);
+      color: #ffedd5;
+      animation: pulseAlert 2s infinite ease-in-out;
+    }
+    .status-ROSSA {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(185, 28, 28, 0.3));
+      border: 1px solid rgba(239, 68, 68, 0.6);
+      color: #fecdd3;
+      animation: pulseAlert 1s infinite ease-in-out;
+    }
+
+    @keyframes pulseAlert {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.02); opacity: 0.9; }
+    }
+
+    /* Meteo Corrente */
+    .main-temp-section { text-align: center; margin-bottom: 20px; }
+    .city-name { font-size: 28px;
