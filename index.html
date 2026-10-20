@@ -243,4 +243,86 @@
     async function loadMeteo() {
       try {
         const url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m&daily=precipitation_sum&timezone=Europe%2FRome';
-        const res = await fetch(
+        const res = await fetch(url);
+        const data = await res.json();
+
+        document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
+        document.getElementById('windSpeed').textContent = data.current.wind_speed_10m + ' km/h';
+        document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
+        document.getElementById('rainAmount').textContent = (data.daily.precipitation_sum[0] || 0) + ' mm';
+        document.getElementById('weatherCondition').textContent = getWeatherDesc(data.current.weather_code);
+
+        drawChart(data.hourly.temperature_2m.slice(0, 24));
+      } catch (e) {
+        console.error("Errore recupero meteo:", e);
+      }
+    }
+
+    function getWeatherDesc(code) {
+      const map = {
+        0: 'Sereno', 1: 'Prevalentemente Sereno', 2: 'Parzialmente Nuvoloso', 3: 'Coperto',
+        45: 'Nebbia', 51: 'Pioggerella', 61: 'Pioggia Moderata', 63: 'Pioggia Forte',
+        80: 'Rovesci di Pioggia', 95: 'Temporale', 96: 'Temporale con Forte Pioggia'
+      };
+      return map[code] || 'Variabile';
+    }
+
+    function drawChart(temps) {
+      const canvas = document.getElementById('tempChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w === 0 || h === 0) return;
+
+      const min = Math.min(...temps) - 1;
+      const max = Math.max(...temps) + 1;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(2, 132, 199, 0.25)');
+      grad.addColorStop(1, 'rgba(2, 132, 199, 0.0)');
+
+      ctx.beginPath();
+      temps.forEach((t, i) => {
+        const x = (i / (temps.length - 1)) * w;
+        const y = h - ((t - min) / (max - min)) * (h - 16) - 8;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.strokeStyle = '#0284c7';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // Supporto PWA Install Prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('installBtn');
+      btn.style.display = 'flex';
+      btn.onclick = () => {
+        btn.style.display = 'none';
+        deferredPrompt.prompt();
+      };
+    });
+
+    loadAlert();
+    loadMeteo();
+  </script>
+</body>
+</html>
