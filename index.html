@@ -104,4 +104,273 @@
 
     /* Meteo Corrente */
     .main-temp-section { text-align: center; margin-bottom: 20px; }
-    .city-name { font-size: 28px;
+    .city-name { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    .temp-large { font-size: 64px; font-weight: 800; letter-spacing: -2px; margin: 4px 0; }
+    .weather-desc { font-size: 15px; color: var(--text-sub); text-transform: capitalize; }
+
+    /* Griglia Metriche */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .stat-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-label { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; display: block; }
+    .stat-value { font-size: 15px; font-weight: 600; }
+
+    /* Sezione Grafico Canvas */
+    .section-title { font-size: 13px; font-weight: 600; color: var(--text-sub); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .chart-container {
+      background: rgba(15, 23, 42, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+    canvas { width: 100% !important; height: 90px !important; }
+
+    /* Previsioni 7 giorni */
+    .daily-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .daily-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.25);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+    .day-name { width: 80px; font-weight: 500; }
+    .day-temp { font-weight: 600; }
+
+    /* Pulsanti Azioni */
+    .btn-group { display: flex; flex-direction: column; gap: 10px; }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-pdf { background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); }
+    .btn-pdf:hover { background: rgba(255, 255, 255, 0.15); }
+    .btn-install { background: #007aff; color: #fff; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4); display: none; }
+    
+    .last-update { text-align: center; font-size: 11px; color: #64748b; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="widget-container">
+    <!-- Intestazione Mac -->
+    <div class="mac-header">
+      <div class="traffic-lights">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <div class="location-title">Aversa (CE) • Protezione Civile</div>
+    </div>
+
+    <!-- Banner Allerta Reale -->
+    <div id="alertBanner" class="alert-banner status-VERDE">
+      <span>Caricamento allerta...</span>
+    </div>
+
+    <!-- Meteo Principale -->
+    <div class="main-temp-section">
+      <div class="city-name">Aversa</div>
+      <div class="temp-large" id="currentTemp">--°</div>
+      <div class="weather-desc" id="weatherCondition">Caricamento meteo...</div>
+    </div>
+
+    <!-- Metriche Dettagliate -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Vento</span>
+        <span class="stat-value" id="windSpeed">-- km/h</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Pioggia Oggi</span>
+        <span class="stat-value" id="rainAmount">-- mm</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Umidità</span>
+        <span class="stat-value" id="humidityVal">-- %</span>
+      </div>
+    </div>
+
+    <!-- Grafico Orario Canvas -->
+    <div class="section-title">Previsione Temperature (24h)</div>
+    <div class="chart-container">
+      <canvas id="tempChart"></canvas>
+    </div>
+
+    <!-- Previsioni 5 Giorni -->
+    <div class="section-title">I Prossimi Giorni</div>
+    <div class="daily-list" id="dailyForecast">
+      <!-- Inseriti dinamicamente via JS -->
+    </div>
+
+    <!-- Gruppo Pulsanti -->
+    <div class="btn-group">
+      <a href="http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo" target="_blank" rel="noopener" class="btn btn-pdf">
+        📄 Bollettino Ufficiale Campania PDF
+      </a>
+      <button id="installBtn" class="btn btn-install">📲 Installa come App su Mac</button>
+    </div>
+
+    <div class="last-update" id="updateTime">Ultimo controllo: --</div>
+  </div>
+
+  <script>
+    // 1. Caricamento Allerta dal file JSON generato dal backend GitHub
+    async function loadAlert() {
+      try {
+        const response = await fetch('./alert.json?v=' + new Date().getTime());
+        const data = await response.json();
+        
+        const banner = document.getElementById('alertBanner');
+        banner.className = 'alert-banner status-' + data.status;
+        banner.innerHTML = `<span>${data.message}</span>`;
+        document.getElementById('updateTime').textContent = 'Ultima verifica ufficiale: ' + data.updated_at;
+      } catch (err) {
+        console.error("Errore caricamento allerta:", err);
+      }
+    }
+
+    // 2. Caricamento Meteo Open-Meteo per Aversa
+    async function loadMeteo() {
+      try {
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%2FRome';
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // Dati correnti
+        document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
+        document.getElementById('windSpeed').textContent = data.current.wind_speed_10m + ' km/h';
+        document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
+        document.getElementById('rainAmount').textContent = (data.daily.precipitation_sum[0] || 0) + ' mm';
+        document.getElementById('weatherCondition').textContent = getWeatherDesc(data.current.weather_code);
+
+        // Disegna Grafico 24h
+        drawChart(data.hourly.temperature_2m.slice(0, 24));
+
+        // Render Previsioni Giornaliere
+        renderDaily(data.daily);
+
+      } catch (err) {
+        console.error("Errore caricamento meteo:", err);
+      }
+    }
+
+    // Traduzione WMO Weather Codes
+    function getWeatherDesc(code) {
+      const codes = {
+        0: 'Sereno', 1: 'Prevalentemente Sereno', 2: 'Parzialmente Nuvoloso', 3: 'Coperto',
+        45: 'Nebbia', 51: 'Pioggerella', 61: 'Pioggia Moderata', 63: 'Pioggia Forte',
+        80: 'Rovesci di Pioggia', 95: 'Temporale', 96: 'Temporale con Forte Pioggia'
+      };
+      return codes[code] || 'Variabile';
+    }
+
+    // Grafico Canvas Nativo fluido
+    function drawChart(temps) {
+      const canvas = document.getElementById('tempChart');
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      const min = Math.min(...temps) - 1;
+      const max = Math.max(...temps) + 1;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Linea di gradiente
+      const gradient = ctx.createLinearGradient(0, 0, 0, h);
+      gradient.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+      gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+
+      ctx.beginPath();
+      temps.forEach((t, i) => {
+        const x = (i / (temps.length - 1)) * w;
+        const y = h - ((t - min) / (max - min)) * (h - 20) - 10;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Riempimento sotto la curva
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+
+    // Previsioni per i giorni successivi
+    function renderDaily(daily) {
+      const container = document.getElementById('dailyForecast');
+      container.innerHTML = '';
+      
+      const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+      
+      for (let i = 1; i <= 4; i++) {
+        const date = new Date(daily.time[i]);
+        const dayName = days[date.getDay()];
+        const max = Math.round(daily.temperature_2m_max[i]);
+        const min = Math.round(daily.temperature_2m_min[i]);
+        const desc = getWeatherDesc(daily.weather_code[i]);
+
+        const row = document.createElement('div');
+        row.className = 'daily-row';
+        row.innerHTML = `
+          <span class="day-name">${dayName}</span>
+          <span style="color: var(--text-sub); font-size: 12px;">${desc}</span>
+          <span class="day-temp">${max}° / <span style="color:var(--text-sub);">${min}°</span></span>
+        `;
+        container.appendChild(row);
+      }
+    }
+
+    // Gestione PWA Install Prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('installBtn');
+      btn.style.display = 'flex';
+      btn.onclick = () => {
+        btn.style.display = 'none';
+        deferredPrompt.prompt();
+      };
+    });
+
+    // Avvio
+    loadAlert();
+    loadMeteo();
+  </script>
+</body>
+</html>
