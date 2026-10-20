@@ -1,105 +1,36 @@
-name: Aggiorna Allerta Meteo Aversa
+name: Scraping Meteo & Allerte Aversa
 
 on:
   schedule:
-    - cron: '0 * * * *' # Esecuzione automatica ogni ora
-  workflow_dispatch: # Avvio manuale
-
-permissions:
-  contents: write
+    # Esegue lo script ogni ora (al minuto 0)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Permette di avviare lo script anche manualmente con un click
 
 jobs:
-  check-alert:
+  scrape-job:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Scarica il codice del repository
         uses: actions/checkout@v4
 
-      - name: Configurazione Python
-        uses: actions/setup-python@v5
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.10'
+          node-version: '20'
 
-      - name: Installazione Playwright e Browser Chromium
+      - name: Installa Playwright e dipendenze
         run: |
-          pip install playwright
-          playwright install chromium
-          playwright install-deps
+          npm init -y
+          npm install playwright axios xml2js
+          npx playwright install --with-deps chromium
 
-      - name: Scansione Completa di Tutti gli iFrame
+      - name: Esegui lo script scrape.js
+        run: node scrape.js
+
+      - name: Commit e Push del file alert.json aggiornato
         run: |
-          python3 -c "
-          import json, datetime
-          from playwright.sync_api import sync_playwright
-
-          status = 'VERDE'
-          msg = 'Nessuna allerta critica per Aversa (Zona 2)'
-
-          urls = [
-              'https://centrofunzionale.regione.campania.it/',
-              'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo',
-              'https://centrofunzionale.regione.campania.it/it/avvisi/avvisi-di-allerta-meteo',
-              'https://www.regione.campania.it/regione/it/news/protezione-civile-1'
-          ]
-
-          full_text = ''
-
-          with sync_playwright() as p:
-              browser = p.chromium.launch(headless=True)
-              context = browser.new_context(
-                  user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-              )
-              page = context.new_page()
-
-              for url in urls:
-                  try:
-                      print(f'>>> Apertura browser su: {url}')
-                      page.goto(url, timeout=35000, wait_until='networkidle')
-                      page.wait_for_timeout(3000)
-
-                      # Scansione di TUTTI i sotto-frame/iframe della pagina
-                      site_text = ''
-                      for frame in page.frames:
-                          try:
-                              f_text = frame.inner_text('body')
-                              site_text += ' ' + f_text
-                          except Exception:
-                              pass
-
-                      full_text += ' ' + site_text.lower()
-                      print(f'    Estratti {len(site_text)} caratteri (inclusi tutti gli iFrame)!')
-                  except Exception as e:
-                      print(f'    Errore su {url}: {e}')
-
-              browser.close()
-
-          # Valutazione criticità
-          if any(k in full_text for k in ['arancion', 'preallarme', 'moderata critic']):
-              status = 'ARANCIONE'
-              msg = '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
-          elif any(k in full_text for k in ['giall', 'ordinaria critic', 'attenzione']):
-              status = 'GIALLA'
-              msg = '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
-          elif any(k in full_text for k in ['ross', 'elevata critic', 'fase di allarme']):
-              status = 'ROSSA'
-              msg = '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
-
-          print(f'>>> ESITO FINALE: {status} - {msg}')
-
-          out = {
-              'status': status,
-              'message': msg,
-              'updated_at': datetime.datetime.now().strftime('%d/%m/%Y %H:%M')
-          }
-
-          with open('alert.json', 'w', encoding='utf-8') as f:
-              json.dump(out, f, ensure_ascii=False, indent=2)
-          "
-
-      - name: Salvataggio alert.json
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add alert.json
-          git commit -m "Aggiornamento automatico allerta Aversa" || exit 0
-          git push
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update alert.json [skip ci]" && git push)
