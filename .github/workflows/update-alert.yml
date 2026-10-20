@@ -15,62 +15,79 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configurazione Python e Dipendenze
+      - name: Configurazione Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Installazione Librerie Scraper
-        run: pip install requests beautifulsoup4
+      - name: Installazione Librerie (Requests, BeautifulSoup, Feedparser)
+        run: pip install requests beautifulsoup4 feedparser
 
-      - name: Scansione Intelligente Allerte Campania
+      - name: Scansione Avanzata RSS e Bollettini
         run: |
           python3 -c "
-          import requests, json, datetime
+          import requests, json, datetime, feedparser, urllib3
           from bs4 import BeautifulSoup
 
-          headers = {
-              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
-          }
+          # Disabilita warning SSL
+          urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+          headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'}
           status = 'VERDE'
           msg = 'Nessuna allerta critica per Aversa (Zona 2)'
+          corpus = []
 
-          urls = [
-              'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
-              'https://centrofunzionale.regione.campania.it/it/avvisi/avvisi-di-allerta-meteo',
+          # 1. Lettura Feed RSS ufficiale con Feedparser
+          rss_urls = [
+              'http://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
+              'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo'
+          ]
+
+          for url in rss_urls:
+              try:
+                  feed = feedparser.parse(url)
+                  print(f'>>> RSS {url}: trovati {len(feed.entries)} avvisi.')
+                  for entry in feed.entries:
+                      title = entry.get('title', '')
+                      summary = entry.get('summary', '')
+                      print(f'    [AVVISO RSS] {title}')
+                      corpus.append(f'{title} {summary}')
+              except Exception as e:
+                  print(f'>>> Errore RSS {url}: {e}')
+
+          # 2. Scansione pagine web ufficiali
+          web_urls = [
+              'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo',
               'https://www.regione.campania.it/regione/it/news/protezione-civile-1'
           ]
 
-          extracted_text = ''
-          for url in urls:
+          for url in web_urls:
               try:
-                  res = requests.get(url, headers=headers, timeout=15, verify=False)
+                  res = requests.get(url, headers=headers, timeout=12, verify=False)
                   if res.status_code == 200:
                       soup = BeautifulSoup(res.text, 'html.parser')
-                      # Rimuove script e stili CSS
-                      for element in soup(['script', 'style', 'nav', 'footer']):
-                          element.decompose()
-                      text = soup.get_text(separator=' ').lower()
-                      extracted_text += ' ' + text
-                      print(f'>>> Caricato con successo: {url} ({len(text)} caratteri di testo reale)')
+                      for s in soup(['script', 'style']):
+                          s.decompose()
+                      t = soup.get_text(separator=' ')
+                      print(f'>>> HTML {url}: estratti {len(t)} caratteri di testo.')
+                      corpus.append(t)
               except Exception as e:
-                  print(f'>>> Errore su {url}: {e}')
+                  print(f'>>> Errore HTML {url}: {e}')
 
-          # Analisi precisa sui soli avvisi attivi
-          if 'arancion' in extracted_text or 'preallarme' in extracted_text or 'moderata critic' in extracted_text:
+          full_text = ' '.join(corpus).lower()
+
+          # Valutazione della criticità
+          if any(k in full_text for k in ['arancion', 'preallarme', 'moderata critic']):
               status = 'ARANCIONE'
               msg = '🚨 ALLERTA ARANCIONE per Aversa (Zona 2)'
-          elif 'giall' in extracted_text or 'ordinaria critic' in extracted_text:
+          elif any(k in full_text for k in ['giall', 'ordinaria critic', 'attenzione']):
               status = 'GIALLA'
               msg = '⚠️ ALLERTA GIALLA per Aversa (Zona 2)'
-          elif 'ross' in extracted_text or 'elevata critic' in extracted_text:
+          elif any(k in full_text for k in ['ross', 'elevata critic', 'fase di allarme']):
               status = 'ROSSA'
               msg = '🔴 ALLERTA ROSSA per Aversa (Zona 2)'
 
-          print(f'>>> ESITO RILEVATO: {status} - {msg}')
+          print(f'>>> ESITO FINALE RILEVATO: {status} - {msg}')
 
           out = {
               'status': status,
