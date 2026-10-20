@@ -8,13 +8,21 @@
   <meta name="theme-color" content="#0f172a">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png">
   <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
+      --glass-bg: rgba(30, 41, 59, 0.85);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: #0f172a;
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
-      color: #f8fafc;
+      background: var(--bg-gradient);
+      color: var(--text-main);
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -22,43 +30,75 @@
       padding: 20px 12px;
     }
 
-    /* Contenitore stile Mac con sfondo solido di riserva + vetro sfocato */
+    /* Widget Glassmorphism macOS */
     .widget-card {
       background: #1e293b;
-      background: rgba(30, 41, 59, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 24px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       padding: 24px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
     }
 
-    /* Header Mac */
+    /* Traffic Lights Mac */
     .mac-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
     .dots { display: flex; gap: 8px; }
     .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-    .dot-r { background: #ff5f56; }
-    .dot-y { background: #ffbd2e; }
-    .dot-g { background: #27c93f; }
-    .header-title { font-size: 13px; color: #94a3b8; font-weight: 500; }
+    .dot-r { background: #ff5f56; border: 0.5px solid #e0443e; }
+    .dot-y { background: #ffbd2e; border: 0.5px solid #dea123; }
+    .dot-g { background: #27c93f; border: 0.5px solid #1aab29; }
+    .header-title { font-size: 13px; color: var(--text-sub); font-weight: 600; }
 
-    /* Banner Allerta */
+    /* Navigazione a Schede */
+    .nav-tabs {
+      display: flex;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Banner Allerta Dinamico */
     .alert-banner {
-      padding: 14px 16px;
-      border-radius: 16px;
+      padding: 14px 18px;
+      border-radius: 18px;
       font-size: 14px;
       font-weight: 700;
       text-align: center;
       margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
       transition: all 0.3s ease;
     }
     .status-VERDE {
@@ -72,91 +112,103 @@
       color: #fde047;
     }
     .status-ARANCIONE {
-      background: rgba(249, 115, 22, 0.3);
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.35), rgba(234, 88, 12, 0.25));
       border: 1px solid #f97316;
       color: #ffedd5;
       animation: pulse 2s infinite ease-in-out;
     }
     .status-ROSSA {
-      background: rgba(239, 68, 68, 0.35);
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(185, 28, 28, 0.3));
       border: 1px solid #ef4444;
       color: #fecdd3;
       animation: pulse 1s infinite ease-in-out;
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.88; transform: scale(1.01); }
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.02); opacity: 0.9; }
     }
 
     /* Meteo Corrente */
     .main-temp { text-align: center; margin-bottom: 20px; }
-    .city { font-size: 26px; font-weight: 700; }
-    .temp-val { font-size: 60px; font-weight: 800; margin: 2px 0; letter-spacing: -2px; }
-    .condition { font-size: 15px; color: #94a3b8; text-transform: capitalize; }
+    .city { font-size: 28px; font-weight: 700; }
+    .temp-val { font-size: 64px; font-weight: 800; letter-spacing: -2px; margin: 2px 0; }
+    .condition { font-size: 15px; color: var(--text-sub); text-transform: capitalize; }
 
-    /* Griglia Metriche */
+    /* Metriche Grid */
     .grid-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
       margin-bottom: 20px;
     }
-    .stat-item {
-      background: rgba(15, 23, 42, 0.6);
+    .stat-card {
+      background: rgba(15, 23, 42, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 10px;
+      border-radius: 16px;
+      padding: 12px 8px;
       text-align: center;
     }
-    .stat-lbl { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px; }
-    .stat-num { font-size: 14px; font-weight: 600; }
+    .stat-label { font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px; }
+    .stat-val { font-size: 14px; font-weight: 600; }
 
-    /* Sezione Grafico */
-    .sec-title { font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    /* Grafico Canvas */
+    .sec-title { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
     .chart-box {
       background: rgba(15, 23, 42, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 10px;
-      margin-bottom: 18px;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 20px;
     }
-    canvas { width: 100% !important; height: 80px !important; display: block; }
+    canvas { width: 100% !important; height: 110px !important; display: block; }
 
-    /* Previsioni */
-    .daily-box { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    /* Previsioni 7gg */
+    .daily-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
     .daily-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: rgba(15, 23, 42, 0.4);
-      padding: 10px 12px;
-      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 12px 14px;
+      border-radius: 14px;
       font-size: 13px;
     }
 
+    /* Zone Critiche */
+    .zones-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .zone-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+    .zone-title { font-size: 13px; font-weight: 700; color: #fde047; margin-bottom: 4px; }
+    .zone-desc { font-size: 12px; color: var(--text-sub); line-height: 1.4; }
+
     /* Pulsanti */
-    .btn-action {
+    .btn-group { display: flex; flex-direction: column; gap: 10px; }
+    .btn {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       width: 100%;
       padding: 14px;
-      border-radius: 14px;
+      border-radius: 16px;
       font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       border: none;
       cursor: pointer;
-      margin-top: 8px;
-      transition: background 0.2s;
+      transition: all 0.2s ease;
     }
     .btn-pdf { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); }
     .btn-pdf:hover { background: rgba(255, 255, 255, 0.2); }
-    .btn-pwa { background: #007aff; color: #fff; display: none; }
+    .btn-pwa { background: #007aff; color: #fff; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4); display: none; }
 
-    .footer-time { text-align: center; font-size: 11px; color: #64748b; margin-top: 14px; }
+    .footer-note { text-align: center; font-size: 11px; color: #64748b; margin-top: 16px; }
   </style>
 </head>
 <body>
@@ -171,146 +223,70 @@
       <div class="header-title">Aversa (CE) • Protezione Civile</div>
     </div>
 
-    <!-- Banner Allerta Reale -->
-    <div id="alertBanner" class="alert-banner status-ARANCIONE">
-      🚨 ALLERTA ARANCIONE per Aversa (Zona 2)
+    <!-- Schede di Navigazione -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-meteo', this)">Meteo & Allerte</button>
+      <button class="tab-btn" onclick="switchTab('tab-chart', this)">Grafico 24h</button>
+      <button class="tab-btn" onclick="switchTab('tab-daily', this)">7 Giorni</button>
+      <button class="tab-btn" onclick="switchTab('tab-zones', this)">Zone Critiche</button>
     </div>
 
-    <!-- Meteo Principale -->
-    <div class="main-temp">
-      <div class="city">Aversa</div>
-      <div class="temp-val" id="currentTemp">18°</div>
-      <div class="condition" id="weatherCondition">In aggiornamento...</div>
-    </div>
-
-    <!-- Metriche -->
-    <div class="grid-stats">
-      <div class="stat-item">
-        <span class="stat-lbl">Vento</span>
-        <span class="stat-num" id="windSpeed">-- km/h</span>
+    <!-- TAB 1: Meteo & Allerte -->
+    <div id="tab-meteo" class="tab-content active">
+      <div id="alertBanner" class="alert-banner status-ARANCIONE">
+        🚨 ALLERTA ARANCIONE per Aversa (Zona 2)
       </div>
-      <div class="stat-item">
-        <span class="stat-lbl">Pioggia Oggi</span>
-        <span class="stat-num" id="rainAmount">-- mm</span>
+
+      <div class="main-temp">
+        <div class="city">Aversa</div>
+        <div class="temp-val" id="currentTemp">18°</div>
+        <div class="condition" id="weatherCondition">Caricamento meteo...</div>
       </div>
-      <div class="stat-item">
-        <span class="stat-lbl">Umidità</span>
-        <span class="stat-num" id="humidityVal">-- %</span>
+
+      <div class="grid-stats">
+        <div class="stat-card">
+          <span class="stat-label">Vento</span>
+          <span class="stat-val" id="windSpeed">-- km/h</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Pioggia Oggi</span>
+          <span class="stat-val" id="rainAmount">-- mm</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Umidità</span>
+          <span class="stat-val" id="humidityVal">-- %</span>
+        </div>
       </div>
     </div>
 
-    <!-- Grafico 24h -->
-    <div class="sec-title">Temperature 24 Ore</div>
-    <div class="chart-box">
-      <canvas id="tempChart"></canvas>
+    <!-- TAB 2: Grafico 24h -->
+    <div id="tab-chart" class="tab-content">
+      <div class="sec-title">Evoluzione Temperatura (24h)</div>
+      <div class="chart-box">
+        <canvas id="tempChart"></canvas>
+      </div>
     </div>
 
-    <!-- Prossimi Giorni -->
-    <div class="sec-title">I Prossimi Giorni</div>
-    <div class="daily-box" id="dailyForecast">
-      <div class="daily-row"><span>Caricamento previsioni...</span></div>
+    <!-- TAB 3: Previsioni 7 Giorni -->
+    <div id="tab-daily" class="tab-content">
+      <div class="sec-title">I Prossimi Giorni ad Aversa</div>
+      <div class="daily-list" id="dailyForecast">
+        <div class="daily-row"><span>Caricamento previsioni...</span></div>
+      </div>
     </div>
 
-    <!-- Link e Pulsante PWA -->
-    <a href="http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo" target="_blank" rel="noopener" class="btn-action btn-pdf">
-      📄 Bollettino Ufficiale Campania PDF
-    </a>
-    <button id="installBtn" class="btn-action btn-pwa">📲 Installa come App su Mac</button>
-
-    <div class="footer-time" id="updateTime">Ultimo controllo: In corso...</div>
-  </div>
-
-  <script>
-    // 1. Carica allerta dal file alert.json generato dalla GitHub Action
-    async function loadAlert() {
-      try {
-        const response = await fetch('./alert.json?v=' + new Date().getTime());
-        if (response.ok) {
-          const data = await response.json();
-          const banner = document.getElementById('alertBanner');
-          banner.className = 'alert-banner status-' + data.status;
-          banner.textContent = data.message;
-          document.getElementById('updateTime').textContent = 'Ultima verifica ufficiale: ' + data.updated_at;
-        }
-      } catch (e) {
-        console.warn("Lettura alert.json fallita, mantengo banner di default.", e);
-      }
-    }
-
-    // 2. Carica meteo da Open-Meteo
-    async function loadMeteo() {
-      try {
-        const url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%2FRome';
-        const res = await fetch(url);
-        const data = await res.json();
-
-        document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
-        document.getElementById('windSpeed').textContent = data.current.wind_speed_10m + ' km/h';
-        document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
-        document.getElementById('rainAmount').textContent = (data.daily.precipitation_sum[0] || 0) + ' mm';
-        document.getElementById('weatherCondition').textContent = getWeatherDesc(data.current.weather_code);
-
-        drawChart(data.hourly.temperature_2m.slice(0, 24));
-        renderDaily(data.daily);
-      } catch (e) {
-        console.error("Errore meteo API:", e);
-      }
-    }
-
-    function getWeatherDesc(code) {
-      const map = {
-        0: 'Sereno', 1: 'Prevalentemente Sereno', 2: 'Parzialmente Nuvoloso', 3: 'Coperto',
-        45: 'Nebbia', 51: 'Pioggerella', 61: 'Pioggia Moderata', 63: 'Pioggia Forte',
-        80: 'Rovesci di Pioggia', 95: 'Temporale', 96: 'Temporale con Forte Pioggia'
-      };
-      return map[code] || 'Variabile';
-    }
-
-    function drawChart(temps) {
-      const canvas = document.getElementById('tempChart');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const dpr = window.devicePixelRatio || 1;
-      
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
-      ctx.scale(dpr, dpr);
-
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      if (w === 0 || h === 0) return;
-
-      const min = Math.min(...temps) - 1;
-      const max = Math.max(...temps) + 1;
-
-      ctx.clearRect(0, 0, w, h);
-
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-      grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
-
-      ctx.beginPath();
-      temps.forEach((t, i) => {
-        const x = (i / (temps.length - 1)) * w;
-        const y = h - ((t - min) / (max - min)) * (h - 16) - 8;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.fillStyle = grad;
-      ctx.fill();
-    }
-
-    function renderDaily(daily) {
-      const container = document.getElementById('dailyForecast');
-      container.innerHTML = '';
-      const days = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
-      
-      for (let i = 1; i <= 4; i++) {
-        if (!daily.time[i]) break;
+    <!-- TAB 4: Zone Critiche -->
+    <div id="tab-zones" class="tab-content">
+      <div class="sec-title">Punti a Rischio Allagamento Aversa</div>
+      <div class="zones-list">
+        <div class="zone-card">
+          <div class="zone-title">⚠️ Sottopasso Viale Olimpico / Via Sgambati</div>
+          <div class="zone-desc">Rischio accumulo acqua rapido in caso di rovesci intensi. Evitare il transito durante allerte Arancione/Rossa.</div>
+        </div>
+        <div class="zone-card">
+          <div class="zone-title">⚠️ Via Costantinopoli & Via Garibaldi</div>
+          <div class="zone-desc">Possibili allagamenti della sede stradale per saturazione della rete fognaria.</div>
+        </div>
+        <div class="zone-card">
+          <div class="zone-title">⚠️ Area Piazza Magenta / Stazione FS</div>
+          <div class="zone-desc">Zona depressa a forte scorrimento superficiale durante temporali intens
