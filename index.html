@@ -3,26 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Meteo & Allerte Aversa - macOS Widget</title>
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#0f172a">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png">
-  <style>
-    :root {
-      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%);
-      --glass-bg: rgba(30, 41, 59, 0.85);
-      --glass-border: rgba(255, 255, 255, 0.12);
-      --text-main: #f8fafc;
-      --text-sub: #94a3b8;
-    }
+  <title>Aversa Meteo & Allerte - macOS Widget</title>
 
+  <!-- PWA Metadata & Manifest -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png">
+
+  <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #0f172a;
-      background: var(--bg-gradient);
-      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #cbd5e1 100%);
+      color: #0f172a;
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -30,263 +26,221 @@
       padding: 20px 12px;
     }
 
-    /* Widget Glassmorphism macOS */
+    /* Card Widget macOS Glassmorphism in Light Mode */
     .widget-card {
-      background: #1e293b;
-      background: var(--glass-bg);
+      background: rgba(255, 255, 255, 0.75);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
-      border: 1px solid var(--glass-border);
-      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 24px;
       width: 100%;
-      max-width: 440px;
-      padding: 24px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      max-width: 390px;
+      padding: 22px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
-    /* Traffic Lights Mac */
+    /* macOS Header (Traffic Lights) */
     .mac-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
     .dots { display: flex; gap: 8px; }
     .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-    .dot-r { background: #ff5f56; border: 0.5px solid #e0443e; }
-    .dot-y { background: #ffbd2e; border: 0.5px solid #dea123; }
-    .dot-g { background: #27c93f; border: 0.5px solid #1aab29; }
-    .header-title { font-size: 13px; color: var(--text-sub); font-weight: 600; }
+    .dot-red { background: #ff5f56; border: 0.5px solid #e0443e; }
+    .dot-yellow { background: #ffbd2e; border: 0.5px solid #dea123; }
+    .dot-green { background: #27c93f; border: 0.5px solid #1aab29; }
+    .widget-title { font-size: 13px; color: #64748b; font-weight: 600; }
 
-    /* Navigazione a Schede */
-    .nav-tabs {
-      display: flex;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 4px;
-      margin-bottom: 20px;
-      gap: 4px;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 8px 4px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-sub);
-      background: transparent;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-    }
-    .tab-btn.active {
-      background: rgba(255, 255, 255, 0.15);
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    /* Banner Allerta Dinamico */
+    /* Banner Allerta Dinamico (Light Theme) */
     .alert-banner {
-      padding: 14px 18px;
-      border-radius: 18px;
-      font-size: 14px;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-    .status-VERDE {
-      background: rgba(34, 197, 94, 0.2);
-      border: 1px solid #22c55e;
-      color: #4ade80;
-    }
-    .status-GIALLA {
-      background: rgba(234, 179, 8, 0.25);
-      border: 1px solid #eab308;
-      color: #fde047;
-    }
-    .status-ARANCIONE {
-      background: linear-gradient(135deg, rgba(249, 115, 22, 0.35), rgba(234, 88, 12, 0.25));
-      border: 1px solid #f97316;
-      color: #ffedd5;
-      animation: pulse 2s infinite ease-in-out;
-    }
-    .status-ROSSA {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(185, 28, 28, 0.3));
-      border: 1px solid #ef4444;
-      color: #fecdd3;
-      animation: pulse 1s infinite ease-in-out;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.02); opacity: 0.9; }
-    }
-
-    /* Meteo Corrente */
-    .main-temp { text-align: center; margin-bottom: 20px; }
-    .city { font-size: 28px; font-weight: 700; }
-    .temp-val { font-size: 64px; font-weight: 800; letter-spacing: -2px; margin: 2px 0; }
-    .condition { font-size: 15px; color: var(--text-sub); text-transform: capitalize; }
-
-    /* Metriche Grid */
-    .grid-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .stat-card {
-      background: rgba(15, 23, 42, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 12px 8px;
-      text-align: center;
-    }
-    .stat-label { font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px; }
-    .stat-val { font-size: 14px; font-weight: 600; }
-
-    /* Grafico Canvas */
-    .sec-title { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .chart-box {
-      background: rgba(15, 23, 42, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 12px;
-      margin-bottom: 20px;
-    }
-    canvas { width: 100% !important; height: 110px !important; display: block; }
-
-    /* Previsioni 7gg */
-    .daily-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-    .daily-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(15, 23, 42, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.05);
       padding: 12px 14px;
       border-radius: 14px;
       font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: all 0.3s ease;
     }
 
-    /* Zone Critiche */
-    .zones-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-    .zone-card {
-      background: rgba(15, 23, 42, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 12px 14px;
+    .status-VERDE {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #15803d;
     }
-    .zone-title { font-size: 13px; font-weight: 700; color: #fde047; margin-bottom: 4px; }
-    .zone-desc { font-size: 12px; color: var(--text-sub); line-height: 1.4; }
+    .status-GIALLA {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #b45309;
+    }
+    .status-ARANCIONE {
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.45);
+      color: #c2410c;
+      animation: pulseBanner 2s infinite ease-in-out;
+    }
+    .status-ROSSA {
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #b91c1c;
+      animation: pulseBanner 1s infinite ease-in-out;
+    }
+
+    @keyframes pulseBanner {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.88; transform: scale(1.01); }
+    }
+
+    /* Meteo Corrente */
+    .main-temp { text-align: center; margin-bottom: 18px; }
+    .city { font-size: 24px; font-weight: 700; color: #0f172a; letter-spacing: -0.3px; }
+    .temp-val { font-size: 58px; font-weight: 800; color: #0f172a; margin: 2px 0; letter-spacing: -2px; }
+    .condition { font-size: 14px; color: #64748b; text-transform: capitalize; font-weight: 500; }
+
+    /* Metriche Griglia */
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .stat-label { font-size: 11px; color: #64748b; display: block; margin-bottom: 4px; font-weight: 500; }
+    .stat-val { font-size: 13px; font-weight: 700; color: #1e293b; }
+
+    /* Grafico 24h */
+    .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .chart-box {
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 16px;
+    }
+    canvas { width: 100% !important; height: 80px !important; display: block; }
 
     /* Pulsanti */
-    .btn-group { display: flex; flex-direction: column; gap: 10px; }
+    .btn-group { display: flex; flex-direction: column; gap: 8px; }
+    
     .btn {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       width: 100%;
-      padding: 14px;
-      border-radius: 16px;
-      font-size: 14px;
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 13px;
       font-weight: 600;
       text-decoration: none;
       border: none;
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .btn-pdf { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); }
-    .btn-pdf:hover { background: rgba(255, 255, 255, 0.2); }
-    .btn-pwa { background: #007aff; color: #fff; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4); display: none; }
 
-    .footer-note { text-align: center; font-size: 11px; color: #64748b; margin-top: 16px; }
+    .btn-pdf {
+      color: #334155;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .btn-pdf:hover { background: rgba(0, 0, 0, 0.08); }
+
+    .btn-pwa {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+      display: none;
+    }
+    .btn-pwa:hover { background: #0369a1; }
+
+    .footer-time { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 14px; }
   </style>
 </head>
 <body>
 
   <div class="widget-card">
+    <!-- Header Mac -->
     <div class="mac-header">
       <div class="dots">
-        <span class="dot dot-r"></span>
-        <span class="dot dot-y"></span>
-        <span class="dot dot-g"></span>
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
       </div>
-      <div class="header-title">Aversa (CE) • Protezione Civile</div>
+      <div class="widget-title">Aversa (CE) • Protezione Civile</div>
     </div>
 
-    <!-- Schede di Navigazione -->
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('tab-meteo', this)">Meteo & Allerte</button>
-      <button class="tab-btn" onclick="switchTab('tab-chart', this)">Grafico 24h</button>
-      <button class="tab-btn" onclick="switchTab('tab-daily', this)">7 Giorni</button>
-      <button class="tab-btn" onclick="switchTab('tab-zones', this)">Zone Critiche</button>
+    <!-- Banner Allerta Reale -->
+    <div id="alertBanner" class="alert-banner status-VERDE">
+      Caricamento stato allerta...
     </div>
 
-    <!-- TAB 1: Meteo & Allerte -->
-    <div id="tab-meteo" class="tab-content active">
-      <div id="alertBanner" class="alert-banner status-ARANCIONE">
-        🚨 ALLERTA ARANCIONE per Aversa (Zona 2)
-      </div>
+    <!-- Meteo Principale -->
+    <div class="main-temp">
+      <div class="city">Aversa</div>
+      <div class="temp-val" id="currentTemp">--°</div>
+      <div class="condition" id="weatherCondition">Caricamento meteo...</div>
+    </div>
 
-      <div class="main-temp">
-        <div class="city">Aversa</div>
-        <div class="temp-val" id="currentTemp">18°</div>
-        <div class="condition" id="weatherCondition">Caricamento meteo...</div>
+    <!-- Metriche -->
+    <div class="grid-stats">
+      <div class="stat-card">
+        <span class="stat-label">Vento</span>
+        <span class="stat-val" id="windSpeed">-- km/h</span>
       </div>
-
-      <div class="grid-stats">
-        <div class="stat-card">
-          <span class="stat-label">Vento</span>
-          <span class="stat-val" id="windSpeed">-- km/h</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Pioggia Oggi</span>
-          <span class="stat-val" id="rainAmount">-- mm</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Umidità</span>
-          <span class="stat-val" id="humidityVal">-- %</span>
-        </div>
+      <div class="stat-card">
+        <span class="stat-label">Pioggia Oggi</span>
+        <span class="stat-val" id="rainAmount">-- mm</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Umidità</span>
+        <span class="stat-val" id="humidityVal">-- %</span>
       </div>
     </div>
 
-    <!-- TAB 2: Grafico 24h -->
-    <div id="tab-chart" class="tab-content">
-      <div class="sec-title">Evoluzione Temperatura (24h)</div>
-      <div class="chart-box">
-        <canvas id="tempChart"></canvas>
-      </div>
+    <!-- Grafico Temperature 24 Ore -->
+    <div class="sec-title">Evoluzione 24h</div>
+    <div class="chart-box">
+      <canvas id="tempChart"></canvas>
     </div>
 
-    <!-- TAB 3: Previsioni 7 Giorni -->
-    <div id="tab-daily" class="tab-content">
-      <div class="sec-title">I Prossimi Giorni ad Aversa</div>
-      <div class="daily-list" id="dailyForecast">
-        <div class="daily-row"><span>Caricamento previsioni...</span></div>
-      </div>
+    <!-- Pulsanti Azione -->
+    <div class="btn-group">
+      <a href="http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo" target="_blank" rel="noopener" class="btn btn-pdf">
+        📄 Bollettino Ufficiale PDF
+      </a>
+      <button id="installBtn" class="btn btn-pwa">📲 Installa come App su Mac / Smartphone</button>
     </div>
 
-    <!-- TAB 4: Zone Critiche -->
-    <div id="tab-zones" class="tab-content">
-      <div class="sec-title">Punti a Rischio Allagamento Aversa</div>
-      <div class="zones-list">
-        <div class="zone-card">
-          <div class="zone-title">⚠️ Sottopasso Viale Olimpico / Via Sgambati</div>
-          <div class="zone-desc">Rischio accumulo acqua rapido in caso di rovesci intensi. Evitare il transito durante allerte Arancione/Rossa.</div>
-        </div>
-        <div class="zone-card">
-          <div class="zone-title">⚠️ Via Costantinopoli & Via Garibaldi</div>
-          <div class="zone-desc">Possibili allagamenti della sede stradale per saturazione della rete fognaria.</div>
-        </div>
-        <div class="zone-card">
-          <div class="zone-title">⚠️ Area Piazza Magenta / Stazione FS</div>
-          <div class="zone-desc">Zona depressa a forte scorrimento superficiale durante temporali intens
+    <div class="footer-time" id="updateTime">Ultimo controllo: --</div>
+  </div>
+
+  <script>
+    // 1. Caricamento dinamico dello stato allerta dal file alert.json
+    async function loadAlert() {
+      try {
+        const response = await fetch('./alert.json?v=' + new Date().getTime());
+        if (response.ok) {
+          const data = await response.json();
+          const banner = document.getElementById('alertBanner');
+          banner.className = 'alert-banner status-' + data.status;
+          banner.textContent = data.message;
+          document.getElementById('updateTime').textContent = 'Ultima verifica: ' + data.updated_at;
+        }
+      } catch (e) {
+        console.warn("Lettura alert.json fallita, uso stato predefinito.", e);
+      }
+    }
+
+    // 2. Caricamento meteo live da Open-Meteo per Aversa
+    async function loadMeteo() {
+      try {
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m&daily=precipitation_sum&timezone=Europe%2FRome';
+        const res = await fetch(
