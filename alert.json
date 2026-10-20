@@ -1,5 +1,6 @@
 {
-  "status": "ARANCIONE",
-  "message": "🚨 ALLERTA ARANCIONE per Aversa (Zona 2)",
-  "updated_at": "20/10/2026 20:22"
+  "status": "VERDE",
+  "message": "Nessuna allerta meteo critica in vigore per la Zona 2 (Agro Aversano).",
+  "scuole_chiuse": false,
+  "updated_at": "20/10/2026, 22:39:43"
 }
