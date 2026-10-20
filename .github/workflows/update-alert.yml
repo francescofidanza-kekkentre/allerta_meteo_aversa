@@ -2,8 +2,8 @@ name: Aggiorna Allerta Meteo Aversa
 
 on:
   schedule:
-    - cron: '0 * * * *' # Si esegue automaticamente ogni ora
-  workflow_dispatch: # Permette l'avvio manuale
+    - cron: '0 * * * *' # Esecuzione automatica ogni ora
+  workflow_dispatch: # Avvio manuale
 
 permissions:
   contents: write
@@ -15,38 +15,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Controllo Bollettino e Feed Campania
+      - name: Controllo Bollettino Protezione Civile
         run: |
           python3 -c "
-          import urllib.request, json, datetime, re, xml.etree.ElementTree as ET
+          import urllib.request, json, datetime, ssl
+
+          # Bypass verifica SSL per i server regionali
+          ctx = ssl.create_default_context()
+          ctx.check_hostname = False
+          ctx.verify_mode = ssl.CERT_NONE
 
           status = 'VERDE'
           msg = 'Nessuna allerta critica per la Zona 2 (Agro Aversano)'
-          headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'}
+          headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
-          sources = [
-              'http://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo',
-              'http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo'
+          # Sorgenti ufficiali: 1) OpenData DPC Nazionale, 2) Portale Campania HTTPS, 3) Feed RSS
+          urls = [
+              'https://raw.githubusercontent.com/pcm-dpc/DPC-Bollettini-Criticita-Idrogeologica-Idraulica/master/latest/bollettino.json',
+              'https://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo',
+              'https://centrofunzionale.regione.campania.it/it/rss/avvisi-di-allerta-meteo'
           ]
 
-          combined_text = ''
-          for url in sources:
+          full_content = ''
+          for url in urls:
               try:
                   req = urllib.request.Request(url, headers=headers)
-                  with urllib.request.urlopen(req, timeout=10) as resp:
-                      content = resp.read().decode('utf-8', errors='ignore')
-                      combined_text += ' ' + content.lower()
+                  with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+                      text = resp.read().decode('utf-8', errors='ignore')
+                      full_content += ' ' + text
               except Exception as e:
-                  print(f'Errore lettura {url}: {e}')
+                  print(f'Errore caricamento {url}: {e}')
 
-          # Analisi livello di allerta con priorità
-          if 'arancione' in combined_text or 'fase di allarme' in combined_text:
+          text_lower = full_content.lower()
+
+          # Valutazione priorità allerta per la Campania / Zona 2
+          if 'arancione' in text_lower or 'allarme' in text_lower:
               status = 'ARANCIONE'
-              msg = '🚨 Allerta Arancione per la Zona 2 (Agro Aversano)'
-          elif 'gialla' in combined_text or 'fase di attenzione' in combined_text:
+              msg = '🚨 ALLERTA ARANCIONE per la Zona 2 (Agro Aversano)'
+          elif 'gialla' in text_lower or 'attenzione' in text_lower:
               status = 'GIALLA'
-              msg = '⚠️ Allerta Gialla per la Zona 2 (Agro Aversano)'
-          elif 'rossa' in combined_text:
+              msg = '⚠️ ALLERTA GIALLA per la Zona 2 (Agro Aversano)'
+          elif 'rossa' in text_lower:
               status = 'ROSSA'
               msg = '🔴 ALLERTA ROSSA per la Zona 2 (Agro Aversano)'
 
