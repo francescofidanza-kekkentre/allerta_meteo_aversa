@@ -53,7 +53,7 @@
     .dot-green { background: #27c93f; border: 0.5px solid #1aab29; }
     .widget-title { font-size: 13px; color: #64748b; font-weight: 600; }
 
-    /* Segmented Control / Tab Switcher Stile macOS */
+    /* Tab Switcher macOS */
     .tab-bar {
       display: flex;
       background: rgba(0, 0, 0, 0.05);
@@ -412,7 +412,7 @@
 
           if (data.status !== 'VERDE') {
             detailsEl.style.display = 'block';
-            detailsEl.textContent = `Avviso ufficiale Protezione Civile Campania (Zona 2 - Agro Aversano): ${data.message}. Verificare eventuali ordinanze comunali per il territorio di Aversa.`;
+            detailsEl.textContent = 'Avviso ufficiale Protezione Civile Campania (Zona 2 - Agro Aversano): ' + data.message + '. Verificare eventuali ordinanze comunali per il territorio di Aversa.';
           } else {
             detailsEl.style.display = 'none';
           }
