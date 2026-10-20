@@ -28,13 +28,13 @@
 
     /* Card Widget macOS Glassmorphism in Light Mode */
     .widget-card {
-      background: rgba(255, 255, 255, 0.82);
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
       border: 1px solid rgba(255, 255, 255, 0.9);
       border-radius: 24px;
       width: 100%;
-      max-width: 420px;
+      max-width: 430px;
       padding: 22px;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
     }
@@ -173,7 +173,7 @@
       font-size: 12px;
       line-height: 1.55;
       color: #64748b;
-      background: rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.6);
       border: 1px solid rgba(0, 0, 0, 0.05);
       border-radius: 12px;
       padding: 12px 14px;
@@ -194,7 +194,7 @@
       margin-bottom: 18px;
     }
     .stat-card {
-      background: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.65);
       border: 1px solid rgba(0, 0, 0, 0.05);
       border-radius: 12px;
       padding: 10px 6px;
@@ -206,7 +206,7 @@
     /* Grafico 24h */
     .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
     .chart-box {
-      background: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.65);
       border: 1px solid rgba(0, 0, 0, 0.05);
       border-radius: 14px;
       padding: 10px;
@@ -216,7 +216,7 @@
 
     /* Lista Ora per Ora (Prossimi 2 giorni) */
     .hourly-scroll {
-      max-height: 310px;
+      max-height: 340px;
       overflow-y: auto;
       padding-right: 4px;
       display: flex;
@@ -244,7 +244,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.65);
       border: 1px solid rgba(0, 0, 0, 0.04);
       border-radius: 10px;
       padding: 8px 12px;
@@ -419,7 +419,7 @@
             badgeEl.style.background = '#ffedd5';
             badgeEl.style.color = '#c2410c';
             summaryEl.textContent = 'Previsti temporali di forte intensità con possibili rischi legati a precipitazioni concentrate. Disposta la chiusura di scuole, parchi e cimitero comunale ad Aversa.';
-            extTextEl.textContent = "La Protezione Civile della Regione Campania ha diramato un'allerta meteo di colore arancione per la giornata odierna. Il comune di Aversa ha disposto la chiusura di scuole, parchi pubblici e del cimitero comunale per l'intera giornata.";
+            extTextEl.textContent = "Avviso ufficiale Protezione Civile (Zona 2 - Agro Aversano): " + data.message;
           } else if (data.status === 'GIALLA') {
             iconEl.textContent = '⚠️';
             titleEl.textContent = 'Allerta meteo gialla per temporali';
@@ -427,7 +427,7 @@
             badgeEl.style.background = '#fef08a';
             badgeEl.style.color = '#854d0e';
             summaryEl.textContent = 'Previsti fenomeni temporaleschi e locali allagamenti per la Zona 2 (Agro Aversano).';
-            extTextEl.textContent = "La Protezione Civile della Regione Campania ha diramato un'allerta meteo di colore giallo per il territorio di Aversa. Prestare attenzione durante gli spostamenti.";
+            extTextEl.textContent = "Avviso ufficiale Protezione Civile (Zona 2 - Agro Aversano): " + data.message;
           } else if (data.status === 'ROSSA') {
             iconEl.textContent = '🚨';
             titleEl.textContent = 'Allerta meteo rossa - Criticità Elevata';
@@ -435,7 +435,7 @@
             badgeEl.style.background = '#fee2e2';
             badgeEl.style.color = '#991b1b';
             summaryEl.textContent = 'Precipitazioni ed eventi estremi diffusi. Si raccomanda di evitare qualsiasi spostamento.';
-            extTextEl.textContent = "La Protezione Civile della Regione Campania ha diramato il livello massimo di allerta per il territorio.";
+            extTextEl.textContent = "Avviso ufficiale Protezione Civile (Zona 2 - Agro Aversano): " + data.message;
           } else {
             iconEl.textContent = '✅';
             titleEl.textContent = 'Nessuna allerta meteo in vigore';
@@ -472,7 +472,7 @@
           renderHourlyForecast(data.hourly);
         })
         .catch(function(err) {
-          console.error("Errore recupero meteo:", err);
+          console.error("Errore recupero meteo:", e);
         });
     }
 
