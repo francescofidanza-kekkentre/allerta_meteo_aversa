@@ -349,8 +349,8 @@
 
     <!-- Pulsanti Azione -->
     <div class="btn-group">
-      <a href="http://centrofunzionale.regione.campania.it/it/bollettini/bollettino-meteo" target="_blank" rel="noopener" class="btn btn-pdf">
-        📄 Bollettino Ufficiale PDF
+      <a href="http://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener" class="btn btn-pdf">
+        🌐 Portale Ufficiale Protezione Civile Campania
       </a>
       <button id="installBtn" class="btn btn-pwa">📲 Installa come App su Mac / Smartphone</button>
     </div>
@@ -517,7 +517,7 @@
       if (w === 0 || h === 0) return;
 
       var min = Math.min.apply(null, temps) - 1;
-      var max = Math.max.apply(null, temps) + 1;
+      var max = Math.apply(null, temps) + 1;
 
       ctx.clearRect(0, 0, w, h);
 
