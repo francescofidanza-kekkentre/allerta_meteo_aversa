@@ -75,7 +75,7 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Segmented Control / Tab Switcher Stile macOS (Schede 50/50 uguali) */
+    /* Tab Switcher (50/50 uguali) */
     .tab-bar {
       display: flex;
       background: rgba(0, 0, 0, 0.05);
@@ -219,7 +219,7 @@
     }
     canvas { width: 100% !important; height: 80px !important; display: block; }
 
-    /* Lista Ora per Ora (Prossimi 2 giorni) */
+    /* Lista Ora per Ora (48h) */
     .hourly-scroll {
       max-height: 340px;
       overflow-y: auto;
@@ -325,19 +325,19 @@
         <span class="update-time-top" id="updateTime">In verifica...</span>
       </div>
 
-      <!-- Card Allerta Stile Base44 -->
+      <!-- Card Allerta 100% Dinamica dal backend JSON -->
       <div class="base44-alert-card" id="alertCard">
         <div class="alert-icon-box" id="alertIcon">⚠️</div>
         <div class="alert-content">
           <div class="alert-title" id="alertTitle">Caricamento allerta in corso...</div>
           <div><span class="alert-badge" id="alertBadge">Verifica</span></div>
-          <div class="alert-summary" id="alertSummary">Connessione al bollettino regionale...</div>
+          <div class="alert-summary" id="alertSummary">Lettura dati in corso...</div>
         </div>
       </div>
 
-      <!-- Testo Informativo Esteso -->
+      <!-- Testo Dettaglio Dinamico -->
       <div id="alertDetailsText" class="alert-extended-text">
-        Caricamento informazioni di Protezione Civile per il comune di Aversa...
+        Caricamento informazioni ufficiali della Protezione Civile per Aversa...
       </div>
 
       <!-- Meteo Principale -->
@@ -417,38 +417,38 @@
 
           timeEl.textContent = data.updated_at || '';
 
+          // IL MESSAGGIO VIENE ESTRATTO AL 100% DAL FILE alert.json GENERATO DAL BACKEND
+          summaryEl.textContent = data.message || 'Nessun dettaglio disponibile nel bollettino attuale.';
+
           if (data.status === 'ARANCIONE') {
             iconEl.textContent = '⚠️';
-            titleEl.textContent = 'Allerta meteo arancione per rischio idrogeologico e temporali';
+            titleEl.textContent = 'Allerta meteo Arancione (Zona 2 - Agro Aversano)';
             badgeEl.textContent = 'Moderata';
             badgeEl.style.background = '#ffedd5';
             badgeEl.style.color = '#c2410c';
-            summaryEl.textContent = 'Previsti temporali di forte intensità con possibili rischi legati a precipitazioni concentrate. Disposta la chiusura di scuole, parchi e cimitero comunale ad Aversa.';
-            extTextEl.textContent = "Avviso ufficiale Protezione Civile (Zona 2 - Agro Aversano): " + data.message;
+            extTextEl.textContent = "Stato di allerta ARANCIONE diramato dalla Protezione Civile Campania per la Zona 2. Verificare l'albo pretorio o i canali ufficiali del Comune di Aversa per eventuali ordinanze sindacali in merito alle scuole.";
           } else if (data.status === 'GIALLA') {
             iconEl.textContent = '⚠️';
-            titleEl.textContent = 'Allerta meteo gialla per temporali';
+            titleEl.textContent = 'Allerta meteo Gialla (Zona 2 - Agro Aversano)';
             badgeEl.textContent = 'Ordinaria';
             badgeEl.style.background = '#fef08a';
             badgeEl.style.color = '#854d0e';
-            summaryEl.textContent = 'Previsti fenomeni temporaleschi e locali allagamenti per la Zona 2 (Agro Aversano).';
-            extTextEl.textContent = "Avviso ufficiale Protezione Civile (Zona 2 - Agro Aversano): " + data.message;
+            extTextEl.textContent = "Stato di allerta GIALLA per la Zona 2. Prestare attenzione durante gli spostamenti per possibili locali allagamenti o rovesci.";
           } else if (data.status === 'ROSSA') {
             iconEl.textContent = '🚨';
-            titleEl.textContent = 'Allerta meteo rossa - Criticità Elevata';
+            titleEl.textContent = 'Allerta meteo Rossa (Zona 2 - Agro Aversano)';
             badgeEl.textContent = 'Elevata';
             badgeEl.style.background = '#fee2e2';
             badgeEl.style.color = '#991b1b';
-            summaryEl.textContent = 'Precipitazioni ed eventi estremi diffusi. Si raccomanda di evitare qualsiasi spostamento.';
-            extTextEl.textContent = "Avviso ufficiale Protezione Civile (Zona 2 - Agro Aversano): " + data.message;
+            extTextEl.textContent = "CRITICITÀ ELEVATA diramata per il territorio. Consultare i canali comunali di Aversa per l'ordinanza di chiusura di scuole e strutture pubbliche.";
           } else {
             iconEl.textContent = '✅';
             titleEl.textContent = 'Nessuna allerta meteo in vigore';
             badgeEl.textContent = 'Verde';
             badgeEl.style.background = '#bbf7d0';
             badgeEl.style.color = '#166534';
-            summaryEl.textContent = 'Condizioni meteorologiche nella norma. Nessuna criticità segnalata per la Zona 2.';
-            extTextEl.textContent = 'Non sono presenti allerte critiche o ordinanze comunali attive sul territorio di Aversa.';
+            summaryEl.textContent = 'Condizioni meteorologiche nella norma per la Zona 2 (Agro Aversano).';
+            extTextEl.textContent = 'Non risultano allarmi meteo critici né ordinanze comunali attive per il territorio di Aversa.';
           }
         })
         .catch(function(err) {
