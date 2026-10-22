@@ -75,8 +75,8 @@ def fetch_and_update_alert():
   # (Sostituire status e raw_message con la logica di lettura dal bollettino Protezione Civile Campania)
   status = "GIALLA"
   raw_message = (
-      "Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 2"
-      " (Agro Aversano)."
+    "Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 1"
+    " (Piana campana, Napoli, Isole e Area vesuviana)."
   )
 
   # Pulisce il testo da eventuali frasi fuorvianti
