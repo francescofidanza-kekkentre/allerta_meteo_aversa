@@ -10,7 +10,6 @@ def check_aversa_school_status():
 
   emessa un'ordinanza reale di chiusura delle scuole ad Aversa.
   """
-  # Feed RSS di Google News filtrato sulle notizie locali di Aversa e scuole
   rss_url = "https://news.google.com/rss/search?q=chiusura+scuole+aversa&hl=it&gl=IT&ceid=IT:it"
 
   headers = {
@@ -26,16 +25,14 @@ def check_aversa_school_status():
       soup = BeautifulSoup(response.content, "xml")
       items = soup.find_all("item")
 
-      for item in items[:10]:  # Analizza le prime 10 notizie più recenti
+      for item in items[:10]:
         title = item.title.text.lower()
-
-        # Condizione: la notizia deve menzionare Aversa, le scuole e la chiusura/sospensione
         if (
             ("scuole" in title or "scuola" in title)
             and ("chius" in title or "sospens" in title or "stop" in title)
             and "aversa" in title
         ):
-          print(f" Trovata notizia di chiusura: {item.title.text}")
+          print(f"Trovata notizia di chiusura: {item.title.text}")
           return True
   except Exception as e:
     print(f"⚠️ Errore durante lo scraping delle notizie: {e}")
@@ -44,23 +41,28 @@ def check_aversa_school_status():
 
 
 def clean_weather_message(raw_message):
-  """Rimuove frasi o riferimenti arbitrari alle scuole dal testo del bollettino
+  """Pulisce il testo rimuovendo riferimenti obsoleti o errati alla Zona 2
 
-  per evitare incongruenze con la voce 'schools_closed'.
+  e frasi fuorvianti sulle scuole.
   """
   if not raw_message:
-    return "Bollettino meteo in aggiornamento per la Zona 2 (Agro Aversano)."
+    return "Bollettino meteo in aggiornamento per la Zona 1 (Piana Campana)."
 
-  # Pattern regex per rimuovere frasi relative alle scuole dal testo
+  # Corregge eventuali residui di 'Zona 2' con 'Zona 1'
+  message = raw_message.replace("Zona 2", "Zona 1").replace(
+      "Agro Aversano", "Piana Campana"
+  )
+
+  # Rimuove frasi o riferimenti arbitrari alle scuole
   pattern = (
       r"(?i)(i quotidiani locali|i giornali|il comune|ordinanza).*?(chiusura|scuole).*?\."
   )
-  cleaned = re.sub(pattern, "", raw_message).strip()
+  cleaned = re.sub(pattern, "", message).strip()
 
   return (
       cleaned
       if cleaned
-      else "Allerta meteo in vigore per la Zona 2 (Agro Aversano)."
+      else "Allerta meteo in vigore per la Zona 1 (Piana Campana)."
   )
 
 
@@ -71,18 +73,17 @@ def fetch_and_update_alert():
   # 1. Scraping dinamico per lo stato scuole
   schools_closed = check_aversa_school_status()
 
-  # 2. Definizione stato ed estrazione testo bollettino
-  # (Sostituire status e raw_message con la logica di lettura dal bollettino Protezione Civile Campania)
+  # 2. Definizione stato e messaggio aggiornato con Zona 1
   status = "GIALLA"
   raw_message = (
-    "Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 1"
-    " (Piana campana, Napoli, Isole e Area vesuviana)."
+      "Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 1"
+      " (Piana Campana)."
   )
 
-  # Pulisce il testo da eventuali frasi fuorvianti
+  # Pulisce il testo
   message = clean_weather_message(raw_message)
 
-  # 3. Strutturazione del file JSON finale
+  # 3. Strutturazione JSON
   alert_data = {
       "status": status.upper(),
       "message": message,
@@ -90,11 +91,11 @@ def fetch_and_update_alert():
       "updated_at": datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
   }
 
-  # 4. Scrittura su alert.json
+  # 4. Scrittura su file alert.json
   try:
     with open("alert.json", "w", encoding="utf-8") as f:
       json.dump(alert_data, f, ensure_ascii=False, indent=2)
-    print(" alert.json aggiornato con successo.")
+    print("alert.json aggiornato con successo con la Zona 1!")
     print(json.dumps(alert_data, indent=2, ensure_ascii=False))
   except Exception as e:
     print(f"❌ Errore durante la scrittura di alert.json: {e}")
