@@ -45,11 +45,6 @@
       justify-content: space-between;
       margin-bottom: 12px;
     }
-    .dots { display: flex; gap: 8px; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-    .dot-red { background: #ff5f56; border: 0.5px solid #e0443e; }
-    .dot-yellow { background: #ffbd2e; border: 0.5px solid #dea123; }
-    .dot-green { background: #27c93f; border: 0.5px solid #1aab29; }
     .widget-title { font-size: 13px; color: #64748b; font-weight: 600; }
 
     .refresh-btn {
@@ -108,8 +103,14 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
+    /* Struttura Tab Unificata */
+    .tab-pane { 
+      display: none; 
+      height: 460px; /* ALTEZZA FISSA: Evita che il widget cambi dimensione */
+    }
+    
+    #tab-live.active { display: block; }
+    #tab-hourly.active { display: flex; flex-direction: column; }
 
     /* Sezione Allerta Unificata */
     .alert-section-header {
@@ -238,7 +239,8 @@
 
     /* Lista Ora per Ora (48h) */
     .hourly-scroll {
-      height: 410px;
+      flex: 1; /* Occupa lo spazio disponibile restante */
+      min-height: 0; /* Permette lo scroll interno al flexbox */
       overflow-y: auto;
       padding-right: 4px;
       display: flex;
@@ -321,13 +323,8 @@
 <body>
 
   <div class="widget-card">
-    <!-- Header Mac con Tasto Refresh -->
+    <!-- Header pulito senza puntini -->
     <div class="mac-header">
-      <div class="dots">
-        <span class="dot dot-red"></span>
-        <span class="dot dot-yellow"></span>
-        <span class="dot dot-green"></span>
-      </div>
       <div class="widget-title">Aversa (CE) • Protezione Civile</div>
       <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
     </div>
