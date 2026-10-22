@@ -1,55 +1,103 @@
-import json
 from datetime import datetime
-import requests
+import json
+import re
 from bs4 import BeautifulSoup
+import requests
 
 
 def check_aversa_school_status():
-  """Scansiona Google News / testate locali per verificare se c'è un'ordinanza
+  """Scansiona i feed di notizie e le testate locali per verificare se è stata
 
-  di chiusura scuole ad Aversa rilasciata nelle ultime ore.
+  emessa un'ordinanza reale di chiusura delle scuole ad Aversa.
   """
+  # Feed RSS di Google News filtrato sulle notizie locali di Aversa e scuole
   rss_url = "https://news.google.com/rss/search?q=chiusura+scuole+aversa&hl=it&gl=IT&ceid=IT:it"
 
+  headers = {
+      "User-Agent": (
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,"
+          " like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      )
+  }
+
   try:
-    response = requests.get(rss_url, timeout=10)
+    response = requests.get(rss_url, headers=headers, timeout=10)
     if response.status_code == 200:
       soup = BeautifulSoup(response.content, "xml")
       items = soup.find_all("item")
 
-      for item in items[:8]:  # Controlla le notizie più recenti
+      for item in items[:10]:  # Analizza le prime 10 notizie più recenti
         title = item.title.text.lower()
-        # Se il titolo parla esplicitamente di chiusura/sospensione ad Aversa
-        if "scuole" in title and ("chius" in title or "sospens" in title) and "aversa" in title:
+
+        # Condizione: la notizia deve menzionare Aversa, le scuole e la chiusura/sospensione
+        if (
+            ("scuole" in title or "scuola" in title)
+            and ("chius" in title or "sospens" in title or "stop" in title)
+            and "aversa" in title
+        ):
+          print(f" Trovata notizia di chiusura: {item.title.text}")
           return True
   except Exception as e:
-    print(f"Errore controllo news scuole: {e}")
+    print(f"⚠️ Errore durante lo scraping delle notizie: {e}")
 
   return False
 
 
+def clean_weather_message(raw_message):
+  """Rimuove frasi o riferimenti arbitrari alle scuole dal testo del bollettino
+
+  per evitare incongruenze con la voce 'schools_closed'.
+  """
+  if not raw_message:
+    return "Bollettino meteo in aggiornamento per la Zona 2 (Agro Aversano)."
+
+  # Pattern regex per rimuovere frasi relative alle scuole dal testo
+  pattern = (
+      r"(?i)(i quotidiani locali|i giornali|il comune|ordinanza).*?(chiusura|scuole).*?\."
+  )
+  cleaned = re.sub(pattern, "", raw_message).strip()
+
+  return (
+      cleaned
+      if cleaned
+      else "Allerta meteo in vigore per la Zona 2 (Agro Aversano)."
+  )
+
+
 def fetch_and_update_alert():
-  # 1. Recupera lo stato delle scuole tramite web scraping
+  """Funzione principale di aggiornamento dati."""
+  print("Avvio aggiornamento alert.json...")
+
+  # 1. Scraping dinamico per lo stato scuole
   schools_closed = check_aversa_school_status()
 
-  # 2. Esempio recupero dati bollettino Protezione Civile Campania (o logica esistente)
-  # Qui imposti lo stato rilevato dal bollettino ufficiale (VERDE, GIALLA, ARANCIONE, ROSSA)
-  status = "GIALLA"  # Questo valore lo leggi dal PDF/API della Protezione Civile
-  message = "Allerta meteo Gialla per precipitazioni e temporali nella Zona 2 (Agro Aversano)."
+  # 2. Definizione stato ed estrazione testo bollettino
+  # (Sostituire status e raw_message con la logica di lettura dal bollettino Protezione Civile Campania)
+  status = "GIALLA"
+  raw_message = (
+      "Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 2"
+      " (Agro Aversano)."
+  )
 
-  # 3. Compila il file JSON di output
-  data = {
-      "status": status,
+  # Pulisce il testo da eventuali frasi fuorvianti
+  message = clean_weather_message(raw_message)
+
+  # 3. Strutturazione del file JSON finale
+  alert_data = {
+      "status": status.upper(),
       "message": message,
       "schools_closed": schools_closed,
-      "updated_at": datetime.now().strftime("%d/%m/%Y, %H:%M"),
+      "updated_at": datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
   }
 
-  # 4. Salva in alert.json
-  with open("alert.json", "w", encoding="utf-8") as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
-
-  print("File alert.json aggiornato con successo.")
+  # 4. Scrittura su alert.json
+  try:
+    with open("alert.json", "w", encoding="utf-8") as f:
+      json.dump(alert_data, f, ensure_ascii=False, indent=2)
+    print(" alert.json aggiornato con successo.")
+    print(json.dumps(alert_data, indent=2, ensure_ascii=False))
+  except Exception as e:
+    print(f"❌ Errore durante la scrittura di alert.json: {e}")
 
 
 if __name__ == "__main__":
