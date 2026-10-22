@@ -111,6 +111,7 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
 
+    /* Sezione Allerta Unificata */
     .alert-section-header {
       display: flex;
       justify-content: space-between;
@@ -126,16 +127,38 @@
     }
     .update-time-top { font-size: 11px; color: #94a3b8; }
 
+    /* Base Alert Card */
     .base44-alert-card {
       display: flex;
       gap: 10px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
       border-radius: 14px;
       padding: 10px 12px;
       margin-bottom: 10px;
+      border: 1px solid transparent;
       transition: background-color 0.2s ease, border-color 0.2s ease;
     }
+
+    /* Classi Dinamiche per Colori Allerta */
+    .alert-card-verde { background: #dcfce7 !important; border-color: #22c55e !important; }
+    .alert-badge-verde { background: #86efac !important; color: #14532d !important; }
+    .alert-text-verde { color: #14532d !important; }
+
+    .alert-card-gialla { background: #fef9c3 !important; border-color: #eab308 !important; }
+    .alert-badge-gialla { background: #fef08a !important; color: #854d0e !important; }
+    .alert-text-gialla { color: #713f12 !important; }
+
+    .alert-card-arancione { background: #ffedd5 !important; border-color: #f97316 !important; }
+    .alert-badge-arancione { background: #fdba74 !important; color: #9a3412 !important; }
+    .alert-text-arancione { color: #431407 !important; }
+
+    .alert-card-rossa { background: #fee2e2 !important; border-color: #ef4444 !important; }
+    .alert-badge-rossa { background: #fca5a5 !important; color: #7f1d1d !important; }
+    .alert-text-rossa { color: #450a0a !important; }
+
+    /* Classi Dinamiche per Scuole */
+    .school-closed { color: #7f1d1d !important; }
+    .school-open { color: #14532d !important; }
+
     .alert-icon-box {
       width: 30px;
       height: 30px;
@@ -157,8 +180,6 @@
     }
     .alert-badge {
       display: inline-block;
-      background: #bbf7d0;
-      color: #14532d;
       font-size: 10px;
       font-weight: 700;
       padding: 1px 6px;
@@ -168,7 +189,6 @@
     .alert-summary {
       font-size: 11.5px;
       line-height: 1.35;
-      color: #14532d;
       word-break: break-word;
     }
 
@@ -183,11 +203,13 @@
       gap: 5px;
     }
 
+    /* Meteo Corrente */
     .main-temp { text-align: center; margin-bottom: 10px; }
     .city { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.2px; }
     .temp-val { font-size: 38px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1.5px; line-height: 1.1; }
     .condition { font-size: 12px; color: #64748b; text-transform: capitalize; font-weight: 500; }
 
+    /* Metriche Griglia */
     .grid-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -204,6 +226,7 @@
     .stat-label { font-size: 10px; color: #64748b; display: block; margin-bottom: 2px; font-weight: 500; }
     .stat-val { font-size: 12px; font-weight: 700; color: #1e293b; }
 
+    /* Grafico 24h */
     .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
     .chart-box {
       background: rgba(255, 255, 255, 0.75);
@@ -213,6 +236,7 @@
     }
     canvas { width: 100% !important; height: 115px !important; display: block; }
 
+    /* Lista Ora per Ora (48h) */
     .hourly-scroll {
       height: 410px;
       overflow-y: auto;
@@ -252,6 +276,7 @@
     .hourly-rain { font-size: 11px; color: #0284c7; font-weight: 600; width: 44px; text-align: right; }
     .hourly-temp { font-weight: 700; color: #0f172a; width: 32px; text-align: right; }
 
+    /* Pulsanti Azione */
     .btn-group { 
       display: flex; 
       flex-direction: column; 
@@ -296,6 +321,7 @@
 <body>
 
   <div class="widget-card">
+    <!-- Header Mac con Tasto Refresh -->
     <div class="mac-header">
       <div class="dots">
         <span class="dot dot-red"></span>
@@ -306,33 +332,38 @@
       <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
     </div>
 
+    <!-- Switcher Schede / Tabs -->
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('tab-live', this)">Meteo & Allerta</button>
       <button class="tab-btn" onclick="switchTab('tab-hourly', this)">Ora per Ora (48h)</button>
     </div>
 
+    <!-- TAB 1: Meteo Live & Allerta -->
     <div id="tab-live" class="tab-pane active">
       <div class="alert-section-header">
         <span class="section-label">Allerte in Vigore</span>
         <span class="update-time-top" id="updateTime">In verifica...</span>
       </div>
 
-      <div class="base44-alert-card" id="alertCard">
-        <div class="alert-icon-box" id="alertIcon">⚠️</div>
+      <!-- Card Allerta -->
+      <div class="base44-alert-card alert-card-verde" id="alertCard">
+        <div class="alert-icon-box" id="alertIcon">✅</div>
         <div class="alert-content">
-          <div class="alert-title" id="alertTitle">Allerta Meteo Aversa</div>
-          <div><span class="alert-badge" id="alertBadge">Verifica</span></div>
-          <div class="alert-summary" id="alertSummary">Caricamento bollettino...</div>
+          <div class="alert-title" id="alertTitle">Caricamento allerte...</div>
+          <div><span class="alert-badge alert-badge-verde" id="alertBadge">--</span></div>
+          <div class="alert-summary alert-text-verde" id="alertSummary">Attendere prego.</div>
           <div class="school-status-box" id="schoolStatus">🏫 Scuole ad Aversa: APERTE</div>
         </div>
       </div>
 
+      <!-- Meteo Principale -->
       <div class="main-temp">
         <div class="city">Aversa</div>
         <div class="temp-val" id="currentTemp">--°</div>
         <div class="condition" id="weatherCondition">Caricamento meteo...</div>
       </div>
 
+      <!-- Metriche -->
       <div class="grid-stats">
         <div class="stat-card">
           <span class="stat-label">Vento</span>
@@ -348,12 +379,14 @@
         </div>
       </div>
 
+      <!-- Grafico Temperature 24 Ore -->
       <div class="sec-title">Evoluzione Temperature (24h)</div>
       <div class="chart-box">
         <canvas id="tempChart"></canvas>
       </div>
     </div>
 
+    <!-- TAB 2: Ora per Ora 48h -->
     <div id="tab-hourly" class="tab-pane">
       <div class="sec-title">Previsioni Orarie • Prossimi 2 Giorni</div>
       <div class="hourly-scroll" id="hourlyContainer">
@@ -361,6 +394,7 @@
       </div>
     </div>
 
+    <!-- Pulsanti Azione -->
     <div class="btn-group">
       <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener noreferrer" class="btn btn-pdf">
         🌐 Portale Protezione Civile Campania
@@ -372,11 +406,31 @@
   </div>
 
   <script>
+    // Unica funzione centralizzata per tradurre i codici meteo WMO
+    function getWeatherDesc(code) {
+      var map = {
+        0: { text: 'Sereno', icon: '☀️' },
+        1: { text: 'Quasi Sereno', icon: '🌤️' },
+        2: { text: 'Poco Nuvoloso', icon: '⛅' },
+        3: { text: 'Coperto', icon: '☁️' },
+        45: { text: 'Nebbia', icon: '🌫️' },
+        51: { text: 'Pioggerella', icon: '🌧️' },
+        61: { text: 'Pioggia', icon: '🌧️' },
+        63: { text: 'Pioggia Forte', icon: '🌧️' },
+        80: { text: 'Rovesci', icon: '🌦️' },
+        95: { text: 'Temporale', icon: '⛈️' },
+        96: { text: 'Temporale Forte', icon: '⛈️' }
+      };
+      return map[code] || { text: 'Variabile', icon: '🌤️' };
+    }
+
+    // Navigazione tra i Tab (ottimizzata)
     function switchTab(tabId, btnElement) {
-      var panes = document.querySelectorAll('.tab-pane');
-      for (var i = 0; i < panes.length; i++) { panes[i].classList.remove('active'); }
-      var btns = document.querySelectorAll('.tab-btn');
-      for (var j = 0; j < btns.length; j++) { btns[j].classList.remove('active'); }
+      var activePane = document.querySelector('.tab-pane.active');
+      if(activePane) activePane.classList.remove('active');
+      
+      var activeBtn = document.querySelector('.tab-btn.active');
+      if(activeBtn) activeBtn.classList.remove('active');
       
       document.getElementById(tabId).classList.add('active');
       btnElement.classList.add('active');
@@ -403,81 +457,50 @@
           var status = (data.status || '').toUpperCase();
           var isClosed = data.schools_closed === true;
 
-          // Aggiornamento dello stato Reale delle Scuole
+          // Ripristino classi base per la pulizia dinamica
+          alertCard.className = 'base44-alert-card';
+          badgeEl.className = 'alert-badge';
+          summaryEl.className = 'alert-summary';
+
+          // Gestione dinamica scuole
           if (schoolEl) {
-            if (isClosed) {
-              schoolEl.textContent = '🏫 Scuole ad Aversa: CHIUSE';
-              schoolEl.style.color = '#7f1d1d';
-            } else {
-              schoolEl.textContent = '🏫 Scuole ad Aversa: APERTE';
-              schoolEl.style.color = '#14532d';
-            }
+            schoolEl.textContent = isClosed ? '🏫 Scuole ad Aversa: CHIUSE' : '🏫 Scuole ad Aversa: APERTE';
+            schoolEl.className = 'school-status-box ' + (isClosed ? 'school-closed' : 'school-open');
           }
 
+          // Assegnazione classi di stile CSS in base all'Allerta
           if (status.indexOf('ARANCION') !== -1) {
             if (iconEl) iconEl.textContent = '⚠️';
             if (titleEl) titleEl.textContent = 'Allerta Meteo Arancione (Zona 1 - Piana Campana)';
-            if (alertCard) {
-              alertCard.style.setProperty('background-color', '#ffedd5', 'important');
-              alertCard.style.setProperty('border-color', '#f97316', 'important');
-            }
-            if (badgeEl) {
-              badgeEl.textContent = 'Moderata';
-              badgeEl.style.background = '#fdba74';
-              badgeEl.style.color = '#9a3412';
-            }
-            if (summaryEl) {
-              summaryEl.style.color = '#431407';
-              summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi.';
-            }
+            alertCard.classList.add('alert-card-arancione');
+            badgeEl.classList.add('alert-badge-arancione');
+            badgeEl.textContent = 'Moderata';
+            summaryEl.classList.add('alert-text-arancione');
+            summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi.';
           } else if (status.indexOf('GIALL') !== -1) {
             if (iconEl) iconEl.textContent = '⚠️';
             if (titleEl) titleEl.textContent = 'Allerta Meteo Gialla (Zona 1 - Piana Campana)';
-            if (alertCard) {
-              alertCard.style.setProperty('background-color', '#fef9c3', 'important');
-              alertCard.style.setProperty('border-color', '#eab308', 'important');
-            }
-            if (badgeEl) {
-              badgeEl.textContent = 'Ordinaria';
-              badgeEl.style.background = '#fef08a';
-              badgeEl.style.color = '#854d0e';
-            }
-            if (summaryEl) {
-              summaryEl.style.color = '#713f12';
-              summaryEl.textContent = data.message || 'Possibili rovesci e temporali locali.';
-            }
+            alertCard.classList.add('alert-card-gialla');
+            badgeEl.classList.add('alert-badge-gialla');
+            badgeEl.textContent = 'Ordinaria';
+            summaryEl.classList.add('alert-text-gialla');
+            summaryEl.textContent = data.message || 'Possibili rovesci e temporali locali.';
           } else if (status.indexOf('ROSS') !== -1) {
             if (iconEl) iconEl.textContent = '🚨';
             if (titleEl) titleEl.textContent = 'Allerta Meteo Rossa (Zona 1 - Piana Campana)';
-            if (alertCard) {
-              alertCard.style.setProperty('background-color', '#fee2e2', 'important');
-              alertCard.style.setProperty('border-color', '#ef4444', 'important');
-            }
-            if (badgeEl) {
-              badgeEl.textContent = 'Elevata';
-              badgeEl.style.background = '#fca5a5';
-              badgeEl.style.color = '#7f1d1d';
-            }
-            if (summaryEl) {
-              summaryEl.style.color = '#450a0a';
-              summaryEl.textContent = data.message || 'Criticità elevata per precipitazioni molto intense.';
-            }
+            alertCard.classList.add('alert-card-rossa');
+            badgeEl.classList.add('alert-badge-rossa');
+            badgeEl.textContent = 'Elevata';
+            summaryEl.classList.add('alert-text-rossa');
+            summaryEl.textContent = data.message || 'Criticità elevata per precipitazioni molto intense.';
           } else {
             if (iconEl) iconEl.textContent = '✅';
             if (titleEl) titleEl.textContent = 'Nessuna Allerta Meteo in Vigore';
-            if (alertCard) {
-              alertCard.style.setProperty('background-color', '#dcfce7', 'important');
-              alertCard.style.setProperty('border-color', '#22c55e', 'important');
-            }
-            if (badgeEl) {
-              badgeEl.textContent = 'Verde';
-              badgeEl.style.background = '#86efac';
-              badgeEl.style.color = '#14532d';
-            }
-            if (summaryEl) {
-              summaryEl.style.color = '#14532d';
-              summaryEl.textContent = data.message || 'Condizioni meteorologiche nella norma.';
-            }
+            alertCard.classList.add('alert-card-verde');
+            badgeEl.classList.add('alert-badge-verde');
+            badgeEl.textContent = 'Verde';
+            summaryEl.classList.add('alert-text-verde');
+            summaryEl.textContent = data.message || 'Condizioni meteorologiche nella norma.';
           }
         })
         .catch(function(err) {
@@ -496,11 +519,9 @@
             document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
             document.getElementById('rainAmount').textContent = ((data.daily && data.daily.precipitation_sum) ? data.daily.precipitation_sum[0] : 0) + ' mm';
 
-            var codes = {
-              0: 'Sereno', 1: 'Prevalentemente Sereno', 2: 'Poco Nuvoloso', 3: 'Coperto',
-              45: 'Nebbia', 51: 'Pioggerella', 61: 'Pioggia', 63: 'Pioggia Forte', 95: 'Temporale'
-            };
-            document.getElementById('weatherCondition').textContent = codes[data.current.weather_code] || 'Variabile';
+            // Usa la funzione centralizzata getWeatherDesc invece dell'array statico ridondante
+            var weatherInfo = getWeatherDesc(data.current.weather_code);
+            document.getElementById('weatherCondition').textContent = weatherInfo.text;
           }
 
           if (data && data.hourly) {
@@ -514,23 +535,6 @@
         .catch(function(err) {
           console.error("Errore recupero meteo:", err);
         });
-    }
-
-    function getWeatherDesc(code) {
-      var map = {
-        0: { text: 'Sereno', icon: '☀️' },
-        1: { text: 'Quasi Sereno', icon: '🌤️' },
-        2: { text: 'Poco Nuvoloso', icon: '⛅' },
-        3: { text: 'Coperto', icon: '☁️' },
-        45: { text: 'Nebbia', icon: '🌫️' },
-        51: { text: 'Pioggerella', icon: '🌧️' },
-        61: { text: 'Pioggia', icon: '🌧️' },
-        63: { text: 'Pioggia Forte', icon: '🌧️' },
-        80: { text: 'Rovesci', icon: '🌦️' },
-        95: { text: 'Temporale', icon: '⛈️' },
-        96: { text: 'Temporale Forte', icon: '⛈️' }
-      };
-      return map[code] || { text: 'Variabile', icon: '🌤️' };
     }
 
     function renderHourlyForecast(hourlyData) {
