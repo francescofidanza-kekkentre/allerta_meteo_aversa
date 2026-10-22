@@ -174,7 +174,7 @@
 
     .school-status-box {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       margin-top: 6px;
       padding-top: 6px;
       border-top: 1px dashed rgba(0, 0, 0, 0.12);
@@ -323,7 +323,7 @@
           <div class="alert-title" id="alertTitle">Allerta Meteo Aversa</div>
           <div><span class="alert-badge" id="alertBadge">Verifica</span></div>
           <div class="alert-summary" id="alertSummary">Caricamento bollettino...</div>
-          <div class="school-status-box" id="schoolStatus">🏫 Scuole: Regolarmente Aperte</div>
+          <div class="school-status-box" id="schoolStatus">🏫 Scuole ad Aversa: APERTE</div>
         </div>
       </div>
 
@@ -387,7 +387,6 @@
     }
 
     function loadAlert() {
-      // BUSTING DELLA CACHE
       return fetch('./alert.json?v=' + new Date().getTime(), { cache: "no-store" })
         .then(function(res) { return res.json(); })
         .then(function(data) {
@@ -402,6 +401,18 @@
           if (timeEl && data.updated_at) timeEl.textContent = data.updated_at;
 
           var status = (data.status || '').toUpperCase();
+          var isClosed = data.schools_closed === true;
+
+          // Aggiornamento dello stato Reale delle Scuole
+          if (schoolEl) {
+            if (isClosed) {
+              schoolEl.textContent = '🏫 Scuole ad Aversa: CHIUSE';
+              schoolEl.style.color = '#7f1d1d';
+            } else {
+              schoolEl.textContent = '🏫 Scuole ad Aversa: APERTE';
+              schoolEl.style.color = '#14532d';
+            }
+          }
 
           if (status.indexOf('ARANCION') !== -1) {
             if (iconEl) iconEl.textContent = '⚠️';
@@ -417,17 +428,7 @@
             }
             if (summaryEl) {
               summaryEl.style.color = '#431407';
-              summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi. Prestare attenzione.';
-            }
-            if (schoolEl) {
-              schoolEl.style.color = '#9a3412';
-              if (data.schools_closed === true) {
-                schoolEl.textContent = '🏫 Scuole: CHIUSE (Ordinanza Sindacale Aversa)';
-              } else if (data.schools_closed === false) {
-                schoolEl.textContent = '🏫 Scuole: APERTE';
-              } else {
-                schoolEl.textContent = '🏫 Scuole: Verificare ordinanza del Comune di Aversa';
-              }
+              summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi.';
             }
           } else if (status.indexOf('GIALL') !== -1) {
             if (iconEl) iconEl.textContent = '⚠️';
@@ -445,14 +446,6 @@
               summaryEl.style.color = '#713f12';
               summaryEl.textContent = data.message || 'Possibili rovesci e temporali locali.';
             }
-            if (schoolEl) {
-              schoolEl.style.color = '#854d0e';
-              if (data.schools_closed === true) {
-                schoolEl.textContent = '🏫 Scuole: CHIUSE (Ordinanza Straordinaria)';
-              } else {
-                schoolEl.textContent = '🏫 Scuole: Regolarmente APERTE';
-              }
-            }
           } else if (status.indexOf('ROSS') !== -1) {
             if (iconEl) iconEl.textContent = '🚨';
             if (titleEl) titleEl.textContent = 'Allerta Meteo Rossa (Zona 2 - Agro Aversano)';
@@ -469,10 +462,6 @@
               summaryEl.style.color = '#450a0a';
               summaryEl.textContent = data.message || 'Criticità elevata per precipitazioni molto intense.';
             }
-            if (schoolEl) {
-              schoolEl.style.color = '#7f1d1d';
-              schoolEl.textContent = (data.schools_closed === false) ? '🏫 Scuole: APERTE' : '🏫 Scuole: CHIUSE';
-            }
           } else {
             if (iconEl) iconEl.textContent = '✅';
             if (titleEl) titleEl.textContent = 'Nessuna Allerta Meteo in Vigore';
@@ -488,10 +477,6 @@
             if (summaryEl) {
               summaryEl.style.color = '#14532d';
               summaryEl.textContent = data.message || 'Condizioni meteorologiche nella norma.';
-            }
-            if (schoolEl) {
-              schoolEl.style.color = '#14532d';
-              schoolEl.textContent = '🏫 Scuole: Regolarmente APERTE';
             }
           }
         })
