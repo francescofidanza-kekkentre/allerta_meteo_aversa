@@ -120,7 +120,7 @@
       display: block; 
     }
 
-    /* Sezione Allerta Unificata con Colore Dinamico Immediato */
+    /* Sezione Allerta Unificata */
     .alert-section-header {
       display: flex;
       justify-content: space-between;
@@ -139,8 +139,8 @@
     .base44-alert-card {
       display: flex;
       gap: 10px;
-      background: #ffedd5; /* Default Arancione Caldo */
-      border: 1px solid #f97316;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
       border-radius: 14px;
       padding: 10px 12px;
       margin-bottom: 10px;
@@ -167,8 +167,8 @@
     }
     .alert-badge {
       display: inline-block;
-      background: #fdba74;
-      color: #9a3412;
+      background: #bbf7d0;
+      color: #14532d;
       font-size: 10px;
       font-weight: 700;
       padding: 1px 6px;
@@ -178,8 +178,20 @@
     .alert-summary {
       font-size: 11.5px;
       line-height: 1.35;
-      color: #431407;
+      color: #14532d;
       word-break: break-word;
+    }
+
+    /* Status Scuole */
+    .school-status-box {
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
     /* Meteo Corrente */
@@ -325,13 +337,14 @@
         <span class="update-time-top" id="updateTime">In verifica...</span>
       </div>
 
-      <!-- Card Allerta 100% Dinamica -->
+      <!-- Card Allerta Dinamica -->
       <div class="base44-alert-card" id="alertCard">
         <div class="alert-icon-box" id="alertIcon">⚠️</div>
         <div class="alert-content">
           <div class="alert-title" id="alertTitle">Allerta Meteo Aversa</div>
           <div><span class="alert-badge" id="alertBadge">Verifica</span></div>
           <div class="alert-summary" id="alertSummary">Caricamento bollettino in corso...</div>
+          <div class="school-status-box" id="schoolStatus">🏫 Scuole: in verifica...</div>
         </div>
       </div>
 
@@ -407,17 +420,17 @@
           var titleEl = document.getElementById('alertTitle');
           var badgeEl = document.getElementById('alertBadge');
           var summaryEl = document.getElementById('alertSummary');
+          var schoolEl = document.getElementById('schoolStatus');
           var iconEl = document.getElementById('alertIcon');
           var timeEl = document.getElementById('updateTime');
 
           if (timeEl && data.updated_at) timeEl.textContent = data.updated_at;
-          if (summaryEl && data.message) summaryEl.textContent = data.message;
 
           var status = (data.status || '').toUpperCase();
 
           if (status.indexOf('ARANCION') !== -1) {
             if (iconEl) iconEl.textContent = '⚠️';
-            if (titleEl) titleEl.textContent = 'Allerta meteo Arancione (Zona 2 - Agro Aversano)';
+            if (titleEl) titleEl.textContent = 'Allerta Meteo Arancione (Zona 2 - Agro Aversano)';
             if (alertCard) {
               alertCard.style.setProperty('background-color', '#ffedd5', 'important');
               alertCard.style.setProperty('border-color', '#f97316', 'important');
@@ -427,10 +440,17 @@
               badgeEl.style.background = '#fdba74';
               badgeEl.style.color = '#9a3412';
             }
-            if (summaryEl) summaryEl.style.color = '#431407';
+            if (summaryEl) {
+              summaryEl.style.color = '#431407';
+              summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi. Prestare massima attenzione negli spostamenti.';
+            }
+            if (schoolEl) {
+              schoolEl.style.color = '#9a3412';
+              schoolEl.textContent = '🏫 Scuole: Verificare ordinanze del Comune di Aversa';
+            }
           } else if (status.indexOf('GIALL') !== -1) {
             if (iconEl) iconEl.textContent = '⚠️';
-            if (titleEl) titleEl.textContent = 'Allerta meteo Gialla (Zona 2 - Agro Aversano)';
+            if (titleEl) titleEl.textContent = 'Allerta Meteo Gialla (Zona 2 - Agro Aversano)';
             if (alertCard) {
               alertCard.style.setProperty('background-color', '#fef9c3', 'important');
               alertCard.style.setProperty('border-color', '#eab308', 'important');
@@ -440,10 +460,17 @@
               badgeEl.style.background = '#fef08a';
               badgeEl.style.color = '#854d0e';
             }
-            if (summaryEl) summaryEl.style.color = '#713f12';
+            if (summaryEl) {
+              summaryEl.style.color = '#713f12';
+              summaryEl.textContent = data.message || 'Possibili rovesci e temporali locali. Attenzione per allagamenti nelle zone basse.';
+            }
+            if (schoolEl) {
+              schoolEl.style.color = '#854d0e';
+              schoolEl.textContent = '🏫 Scuole: Regolarmente Aperte (salvo diversa comunicazione)';
+            }
           } else if (status.indexOf('ROSS') !== -1) {
             if (iconEl) iconEl.textContent = '🚨';
-            if (titleEl) titleEl.textContent = 'Allerta meteo Rossa (Zona 2 - Agro Aversano)';
+            if (titleEl) titleEl.textContent = 'Allerta Meteo Rossa (Zona 2 - Agro Aversano)';
             if (alertCard) {
               alertCard.style.setProperty('background-color', '#fee2e2', 'important');
               alertCard.style.setProperty('border-color', '#ef4444', 'important');
@@ -453,10 +480,17 @@
               badgeEl.style.background = '#fca5a5';
               badgeEl.style.color = '#7f1d1d';
             }
-            if (summaryEl) summaryEl.style.color = '#450a0a';
+            if (summaryEl) {
+              summaryEl.style.color = '#450a0a';
+              summaryEl.textContent = data.message || 'Criticità elevata per precipitazioni intense. Evitare gli spostamenti non necessari.';
+            }
+            if (schoolEl) {
+              schoolEl.style.color = '#7f1d1d';
+              schoolEl.textContent = '🏫 Scuole: Probabile Chiusura (Consultare canali ufficiali)';
+            }
           } else {
             if (iconEl) iconEl.textContent = '✅';
-            if (titleEl) titleEl.textContent = 'Nessuna allerta meteo in vigore';
+            if (titleEl) titleEl.textContent = 'Nessuna Allerta Meteo in Vigore';
             if (alertCard) {
               alertCard.style.setProperty('background-color', '#dcfce7', 'important');
               alertCard.style.setProperty('border-color', '#22c55e', 'important');
@@ -468,7 +502,11 @@
             }
             if (summaryEl) {
               summaryEl.style.color = '#14532d';
-              if (!data.message) summaryEl.textContent = 'Condizioni meteorologiche nella norma per la Zona 2 (Agro Aversano).';
+              summaryEl.textContent = data.message || 'Condizioni meteorologiche nella norma per Aversa e la Zona 2.';
+            }
+            if (schoolEl) {
+              schoolEl.style.color = '#14532d';
+              schoolEl.textContent = '🏫 Scuole: Regolarmente Aperte';
             }
           }
         })
