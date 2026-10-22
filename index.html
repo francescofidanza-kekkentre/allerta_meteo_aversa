@@ -733,10 +733,6 @@
       }
     });
 
-    loadAlert();
-    loadMeteo();
-
-    setInterval(manualRefresh, 300000);
     // Registrazione Service Worker per PWABuilder
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
@@ -745,6 +741,11 @@
         });
       });
     }
+    
+    loadAlert();
+    loadMeteo();
+
+    setInterval(manualRefresh, 300000);
   </script>
 </body>
 </html>
