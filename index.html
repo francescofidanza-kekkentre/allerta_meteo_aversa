@@ -516,7 +516,6 @@
             document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
             document.getElementById('rainAmount').textContent = ((data.daily && data.daily.precipitation_sum) ? data.daily.precipitation_sum[0] : 0) + ' mm';
 
-            // Usa la funzione centralizzata getWeatherDesc invece dell'array statico ridondante
             var weatherInfo = getWeatherDesc(data.current.weather_code);
             document.getElementById('weatherCondition').textContent = weatherInfo.text;
           }
@@ -733,7 +732,7 @@
       }
     });
 
-    // Registrazione Service Worker per PWABuilder
+    // Registrazione Service Worker per PWABuilder / PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js').catch(function(err) {
@@ -741,7 +740,7 @@
         });
       });
     }
-    
+
     loadAlert();
     loadMeteo();
 
