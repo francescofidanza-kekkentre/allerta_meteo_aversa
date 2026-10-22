@@ -1,6 +1,6 @@
 {
-  "name": "Aversa Allerte Scuola & Meteo",
-  "short_name": "MeteoAlert Scuola Aversa",
+  "name": "Aversa Meteo & Allerte",
+  "short_name": "Meteo Aversa",
   "description": "Widget meteo e allerte Protezione Civile Campania per la città di Aversa (Zona 1)",
   "start_url": "./index.html",
   "display": "standalone",
@@ -9,7 +9,7 @@
   "theme_color": "#f8fafc",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1163/1163661.png",
+      "src": "https://cdn-icons-png.flaticon.com/192/1163/1163661.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
