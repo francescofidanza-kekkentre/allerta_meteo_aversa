@@ -26,7 +26,6 @@
       padding: 20px 12px;
     }
 
-    /* Card Widget macOS Glassmorphism in Light Mode */
     .widget-card {
       background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(25px);
@@ -40,7 +39,6 @@
       overflow: hidden;
     }
 
-    /* macOS Header */
     .mac-header {
       display: flex;
       align-items: center;
@@ -54,7 +52,6 @@
     .dot-green { background: #27c93f; border: 0.5px solid #1aab29; }
     .widget-title { font-size: 13px; color: #64748b; font-weight: 600; }
 
-    /* Pulsante Aggiornamento Manuale */
     .refresh-btn {
       background: rgba(0, 0, 0, 0.05);
       border: 1px solid rgba(0, 0, 0, 0.08);
@@ -76,7 +73,6 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Tab Switcher (50/50 uguali) */
     .tab-bar {
       display: flex;
       background: rgba(0, 0, 0, 0.05);
@@ -112,15 +108,9 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
-    /* Contenitori Schede */
-    .tab-pane { 
-      display: none; 
-    }
-    .tab-pane.active { 
-      display: block; 
-    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
 
-    /* Sezione Allerta Unificata */
     .alert-section-header {
       display: flex;
       justify-content: space-between;
@@ -182,25 +172,22 @@
       word-break: break-word;
     }
 
-    /* Status Scuole */
     .school-status-box {
       font-size: 11px;
       font-weight: 600;
       margin-top: 6px;
       padding-top: 6px;
-      border-top: 1px dashed rgba(0, 0, 0, 0.1);
+      border-top: 1px dashed rgba(0, 0, 0, 0.12);
       display: flex;
       align-items: center;
       gap: 5px;
     }
 
-    /* Meteo Corrente */
     .main-temp { text-align: center; margin-bottom: 10px; }
     .city { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.2px; }
     .temp-val { font-size: 38px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1.5px; line-height: 1.1; }
     .condition { font-size: 12px; color: #64748b; text-transform: capitalize; font-weight: 500; }
 
-    /* Metriche Griglia */
     .grid-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -217,7 +204,6 @@
     .stat-label { font-size: 10px; color: #64748b; display: block; margin-bottom: 2px; font-weight: 500; }
     .stat-val { font-size: 12px; font-weight: 700; color: #1e293b; }
 
-    /* Grafico 24h */
     .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
     .chart-box {
       background: rgba(255, 255, 255, 0.75);
@@ -227,7 +213,6 @@
     }
     canvas { width: 100% !important; height: 115px !important; display: block; }
 
-    /* Lista Ora per Ora (48h) */
     .hourly-scroll {
       height: 410px;
       overflow-y: auto;
@@ -267,7 +252,6 @@
     .hourly-rain { font-size: 11px; color: #0284c7; font-weight: 600; width: 44px; text-align: right; }
     .hourly-temp { font-weight: 700; color: #0f172a; width: 32px; text-align: right; }
 
-    /* Pulsanti Azione */
     .btn-group { 
       display: flex; 
       flex-direction: column; 
@@ -312,7 +296,6 @@
 <body>
 
   <div class="widget-card">
-    <!-- Header Mac con Tasto Refresh -->
     <div class="mac-header">
       <div class="dots">
         <span class="dot dot-red"></span>
@@ -323,39 +306,33 @@
       <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
     </div>
 
-    <!-- Switcher Schede / Tabs -->
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('tab-live', this)">Meteo & Allerta</button>
       <button class="tab-btn" onclick="switchTab('tab-hourly', this)">Ora per Ora (48h)</button>
     </div>
 
-    <!-- TAB 1: Meteo Live & Allerta -->
     <div id="tab-live" class="tab-pane active">
-      
       <div class="alert-section-header">
         <span class="section-label">Allerte in Vigore</span>
         <span class="update-time-top" id="updateTime">In verifica...</span>
       </div>
 
-      <!-- Card Allerta Dinamica -->
       <div class="base44-alert-card" id="alertCard">
         <div class="alert-icon-box" id="alertIcon">⚠️</div>
         <div class="alert-content">
           <div class="alert-title" id="alertTitle">Allerta Meteo Aversa</div>
           <div><span class="alert-badge" id="alertBadge">Verifica</span></div>
-          <div class="alert-summary" id="alertSummary">Caricamento bollettino in corso...</div>
-          <div class="school-status-box" id="schoolStatus">🏫 Scuole: in verifica...</div>
+          <div class="alert-summary" id="alertSummary">Caricamento bollettino...</div>
+          <div class="school-status-box" id="schoolStatus">🏫 Scuole: Regolarmente Aperte</div>
         </div>
       </div>
 
-      <!-- Meteo Principale -->
       <div class="main-temp">
         <div class="city">Aversa</div>
         <div class="temp-val" id="currentTemp">--°</div>
         <div class="condition" id="weatherCondition">Caricamento meteo...</div>
       </div>
 
-      <!-- Metriche -->
       <div class="grid-stats">
         <div class="stat-card">
           <span class="stat-label">Vento</span>
@@ -371,14 +348,12 @@
         </div>
       </div>
 
-      <!-- Grafico Temperature 24 Ore -->
       <div class="sec-title">Evoluzione Temperature (24h)</div>
       <div class="chart-box">
         <canvas id="tempChart"></canvas>
       </div>
     </div>
 
-    <!-- TAB 2: Ora per Ora 48h -->
     <div id="tab-hourly" class="tab-pane">
       <div class="sec-title">Previsioni Orarie • Prossimi 2 Giorni</div>
       <div class="hourly-scroll" id="hourlyContainer">
@@ -386,7 +361,6 @@
       </div>
     </div>
 
-    <!-- Pulsanti Azione -->
     <div class="btn-group">
       <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener noreferrer" class="btn btn-pdf">
         🌐 Portale Protezione Civile Campania
@@ -413,7 +387,8 @@
     }
 
     function loadAlert() {
-      return fetch('./alert.json?v=' + new Date().getTime())
+      // BUSTING DELLA CACHE
+      return fetch('./alert.json?v=' + new Date().getTime(), { cache: "no-store" })
         .then(function(res) { return res.json(); })
         .then(function(data) {
           var alertCard = document.getElementById('alertCard');
@@ -442,11 +417,17 @@
             }
             if (summaryEl) {
               summaryEl.style.color = '#431407';
-              summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi. Prestare massima attenzione negli spostamenti.';
+              summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi. Prestare attenzione.';
             }
             if (schoolEl) {
               schoolEl.style.color = '#9a3412';
-              schoolEl.textContent = '🏫 Scuole: Verificare ordinanze del Comune di Aversa';
+              if (data.schools_closed === true) {
+                schoolEl.textContent = '🏫 Scuole: CHIUSE (Ordinanza Sindacale Aversa)';
+              } else if (data.schools_closed === false) {
+                schoolEl.textContent = '🏫 Scuole: APERTE';
+              } else {
+                schoolEl.textContent = '🏫 Scuole: Verificare ordinanza del Comune di Aversa';
+              }
             }
           } else if (status.indexOf('GIALL') !== -1) {
             if (iconEl) iconEl.textContent = '⚠️';
@@ -462,11 +443,15 @@
             }
             if (summaryEl) {
               summaryEl.style.color = '#713f12';
-              summaryEl.textContent = data.message || 'Possibili rovesci e temporali locali. Attenzione per allagamenti nelle zone basse.';
+              summaryEl.textContent = data.message || 'Possibili rovesci e temporali locali.';
             }
             if (schoolEl) {
               schoolEl.style.color = '#854d0e';
-              schoolEl.textContent = '🏫 Scuole: Regolarmente Aperte (salvo diversa comunicazione)';
+              if (data.schools_closed === true) {
+                schoolEl.textContent = '🏫 Scuole: CHIUSE (Ordinanza Straordinaria)';
+              } else {
+                schoolEl.textContent = '🏫 Scuole: Regolarmente APERTE';
+              }
             }
           } else if (status.indexOf('ROSS') !== -1) {
             if (iconEl) iconEl.textContent = '🚨';
@@ -482,11 +467,11 @@
             }
             if (summaryEl) {
               summaryEl.style.color = '#450a0a';
-              summaryEl.textContent = data.message || 'Criticità elevata per precipitazioni intense. Evitare gli spostamenti non necessari.';
+              summaryEl.textContent = data.message || 'Criticità elevata per precipitazioni molto intense.';
             }
             if (schoolEl) {
               schoolEl.style.color = '#7f1d1d';
-              schoolEl.textContent = '🏫 Scuole: Probabile Chiusura (Consultare canali ufficiali)';
+              schoolEl.textContent = (data.schools_closed === false) ? '🏫 Scuole: APERTE' : '🏫 Scuole: CHIUSE';
             }
           } else {
             if (iconEl) iconEl.textContent = '✅';
@@ -502,11 +487,11 @@
             }
             if (summaryEl) {
               summaryEl.style.color = '#14532d';
-              summaryEl.textContent = data.message || 'Condizioni meteorologiche nella norma per Aversa e la Zona 2.';
+              summaryEl.textContent = data.message || 'Condizioni meteorologiche nella norma.';
             }
             if (schoolEl) {
               schoolEl.style.color = '#14532d';
-              schoolEl.textContent = '🏫 Scuole: Regolarmente Aperte';
+              schoolEl.textContent = '🏫 Scuole: Regolarmente APERTE';
             }
           }
         })
@@ -517,7 +502,7 @@
 
     function loadMeteo() {
       var url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m&daily=precipitation_sum&timezone=Europe%2FRome&forecast_days=3';
-      return fetch(url)
+      return fetch(url, { cache: "no-store" })
         .then(function(res) { return res.json(); })
         .then(function(data) {
           if (data && data.current) {
@@ -611,7 +596,6 @@
       }
     }
 
-    /* Rendering Grafico Canvas ad Alto Contrasto con Scale Assi X e Y */
     function drawChart(temps, times) {
       var canvas = document.getElementById('tempChart');
       if (!canvas || !temps || temps.length === 0) return;
@@ -641,7 +625,6 @@
 
       ctx.clearRect(0, 0, w, h);
 
-      // 1. Griglia orizzontale e valori Y (Scale ordinate °C)
       ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.fillStyle = '#334155';
       ctx.textAlign = 'right';
@@ -665,7 +648,6 @@
         ctx.fillText(Math.round(tVal) + '°', paddingLeft - 6, yPos);
       });
 
-      // 2. Disegno della curva e riempimento sfumato
       var points = [];
       for (var i = 0; i < temps.length; i++) {
         var x = paddingLeft + (i / (temps.length - 1)) * graphWidth;
@@ -692,7 +674,6 @@
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Linea base ascisse
       ctx.beginPath();
       ctx.strokeStyle = 'rgba(15, 23, 42, 0.15)';
       ctx.lineWidth = 1;
@@ -700,7 +681,6 @@
       ctx.lineTo(w - paddingRight, h - paddingBottom);
       ctx.stroke();
 
-      // 3. Etichette orario X (Scale ascisse)
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = '#475569';
@@ -721,7 +701,6 @@
         }
       });
 
-      // 4. Evidenzia punti di Max e Min sulla curva
       var maxIdx = temps.indexOf(maxTemp);
       var minIdx = temps.indexOf(minTemp);
 
