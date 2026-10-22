@@ -1,38 +1,38 @@
-name: Scraping Meteo & Allerte Aversa
+name: Update Weather Alerts
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    # Esegue lo script ogni 3 ore
+    - cron: '0 */3 * * *'
+  # Permette di avviare l'azione manualmente dalla scheda Actions di GitHub
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  scrape-job:
+  update-alert:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Scarica il codice del repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configura Node.js
-        uses: actions/setup-node@v4
+      - name: Configura Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
+          python-version: '3.x'
 
-      - name: Installa Playwright e dipendenze
+      - name: Install Dependencies
         run: |
-          npm init -y
-          npm install playwright axios xml2js
-          npx playwright install --with-deps chromium
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml
 
-      - name: Esegui lo script scrape.js
-        run: node scrape.js
+      - name: Esegui lo script Python
+        run: |
+          python fetch_alerts.py
 
-      - name: Commit e Push del file alert.json aggiornato
+      - name: Salva e fai il commit di alert.json
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add alert.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update alert.json [skip ci]" && git push)
+          git commit -m "Automated update of alert.json" || exit 0
+          git push
