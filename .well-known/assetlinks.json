@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.francescofidanza_kekkentre.twa",
+        "sha256_cert_fingerprints": ["27:8D:10:19:DA:3C:09:02:C8:79:9B:61:99:08:2B:18:A5:C1:26:4B:C0:CB:A6:14:ED:B7:EC:52:DD:77:72:69"]
+      }
+    }]
