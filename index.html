@@ -737,6 +737,14 @@
     loadMeteo();
 
     setInterval(manualRefresh, 300000);
+    // Registrazione Service Worker per PWABuilder
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').catch(function(err) {
+          console.warn('Service Worker non registrato:', err);
+        });
+      });
+    }
   </script>
 </body>
 </html>
