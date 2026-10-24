@@ -130,27 +130,29 @@
     let deferredPrompt = null;
 
     // -------------------------------------------------------------
-    // 1. PLUGIN CHART.JS: Linea verticale orario e minuti attuali (Rosso)
+    // 1. PLUGIN CHART.JS: Linea verticale e pallino sull'intersezione della curva blu
     // -------------------------------------------------------------
     const currentTimeLinePlugin = {
       id: 'currentTimeLine',
       afterDraw: (chart) => {
         const now = new Date();
-        const currentHour = now.getHours();   // es. 20
-        const currentMinute = now.getMinutes(); // es. 10
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
 
         const meta = chart.getDatasetMeta(0);
         if (!meta || !meta.data || !meta.data[currentHour]) return;
 
-        // Recupera la posizione x del punto esatto dell'ora corrente
+        // Recupera la posizione esatta (X, Y) del punto sulla linea blu
         const currentPoint = meta.data[currentHour];
         let xPixel = currentPoint.x;
+        let yPixel = currentPoint.y;
 
-        // Calcola l'avanzamento progressivo in base ai minuti correnti
+        // Calcola l'avanzamento progressivo in base ai minuti correnti verso l'ora successiva
         if (currentHour < 23 && meta.data[currentHour + 1]) {
           const nextPoint = meta.data[currentHour + 1];
           const minuteRatio = currentMinute / 60;
           xPixel += (nextPoint.x - currentPoint.x) * minuteRatio;
+          yPixel += (nextPoint.y - currentPoint.y) * minuteRatio;
         }
 
         const yAxis = chart.scales.y;
@@ -158,7 +160,7 @@
 
         ctx.save();
 
-        // Disegna linea verticale tratteggiata
+        // 1. Disegna linea verticale tratteggiata
         ctx.beginPath();
         ctx.setLineDash([4, 4]);
         ctx.moveTo(xPixel, yAxis.top);
@@ -167,12 +169,15 @@
         ctx.strokeStyle = '#ef4444';
         ctx.stroke();
 
-        // Disegna pallino rosso in cima
+        // 2. Disegna il pallino rosso sul punto d'intersezione con contorno bianco
         ctx.setLineDash([]);
         ctx.beginPath();
-        ctx.arc(xPixel, yAxis.top, 4, 0, 2 * Math.PI);
+        ctx.arc(xPixel, yPixel, 5, 0, 2 * Math.PI);
         ctx.fillStyle = '#ef4444';
         ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
 
         ctx.restore();
       }
