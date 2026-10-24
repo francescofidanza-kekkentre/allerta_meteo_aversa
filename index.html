@@ -1,750 +1,425 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Aversa Meteo & Allerte - macOS Widget</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aversa Meteo & Allerte</title>
+  
+  <meta name="theme-color" content="#f8fafc" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png" />
 
-  <!-- PWA Metadata & Manifest -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#f8fafc">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png">
-
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #cbd5e1 100%);
-      color: #0f172a;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px 12px;
-    }
-
-    .widget-card {
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border: 1px solid rgba(255, 255, 255, 0.95);
-      border-radius: 24px;
-      width: 100%;
-      max-width: 430px;
-      padding: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-      overflow: hidden;
-    }
-
-    .mac-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-    .widget-title { font-size: 13px; color: #64748b; font-weight: 600; }
-
-    .refresh-btn {
-      background: rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background 0.2s;
-      outline: none;
-    }
-    .refresh-btn:hover { background: rgba(0, 0, 0, 0.1); }
-    .refresh-btn.spinning { animation: spinAnim 0.8s linear infinite; }
-    @keyframes spinAnim {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .tab-bar {
-      display: flex;
-      background: rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      border-radius: 12px;
-      padding: 3px;
-      margin-bottom: 14px;
-      gap: 4px;
-      width: 100%;
-    }
-
-    .tab-btn {
-      flex: 1 1 0;
-      width: 50%;
-      padding: 7px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #64748b;
-      background: transparent;
-      border: none;
-      border-radius: 9px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .tab-btn.active {
-      background: #ffffff;
-      color: #0f172a;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    /* Struttura Tab Unificata */
-    .tab-pane { 
-      display: none; 
-      height: 460px; /* ALTEZZA FISSA: Evita che il widget cambi dimensione */
-    }
-    
-    #tab-live.active { display: block; }
-    #tab-hourly.active { display: flex; flex-direction: column; }
-
-    /* Sezione Allerta Unificata */
-    .alert-section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .section-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.6px;
-      color: #334155;
-      text-transform: uppercase;
-    }
-    .update-time-top { font-size: 11px; color: #94a3b8; }
-
-    /* Base Alert Card */
-    .base44-alert-card {
-      display: flex;
-      gap: 10px;
-      border-radius: 14px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      border: 1px solid transparent;
-      transition: background-color 0.2s ease, border-color 0.2s ease;
-    }
-
-    /* Classi Dinamiche per Colori Allerta */
-    .alert-card-verde { background: #dcfce7 !important; border-color: #22c55e !important; }
-    .alert-badge-verde { background: #86efac !important; color: #14532d !important; }
-    .alert-text-verde { color: #14532d !important; }
-
-    .alert-card-gialla { background: #fef9c3 !important; border-color: #eab308 !important; }
-    .alert-badge-gialla { background: #fef08a !important; color: #854d0e !important; }
-    .alert-text-gialla { color: #713f12 !important; }
-
-    .alert-card-arancione { background: #ffedd5 !important; border-color: #f97316 !important; }
-    .alert-badge-arancione { background: #fdba74 !important; color: #9a3412 !important; }
-    .alert-text-arancione { color: #431407 !important; }
-
-    .alert-card-rossa { background: #fee2e2 !important; border-color: #ef4444 !important; }
-    .alert-badge-rossa { background: #fca5a5 !important; color: #7f1d1d !important; }
-    .alert-text-rossa { color: #450a0a !important; }
-
-    /* Classi Dinamiche per Scuole */
-    .school-closed { color: #7f1d1d !important; }
-    .school-open { color: #14532d !important; }
-
-    .alert-icon-box {
-      width: 30px;
-      height: 30px;
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      flex-shrink: 0;
-    }
-    .alert-content { flex: 1; min-width: 0; }
-    .alert-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 3px;
-      line-height: 1.3;
-    }
-    .alert-badge {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 4px;
-      margin-bottom: 4px;
-    }
-    .alert-summary {
-      font-size: 11.5px;
-      line-height: 1.35;
-      word-break: break-word;
-    }
-
-    .school-status-box {
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px dashed rgba(0, 0, 0, 0.12);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* Meteo Corrente */
-    .main-temp { text-align: center; margin-bottom: 10px; }
-    .city { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.2px; }
-    .temp-val { font-size: 38px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1.5px; line-height: 1.1; }
-    .condition { font-size: 12px; color: #64748b; text-transform: capitalize; font-weight: 500; }
-
-    /* Metriche Griglia */
-    .grid-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .stat-card {
-      background: rgba(255, 255, 255, 0.7);
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      border-radius: 12px;
-      padding: 6px 4px;
-      text-align: center;
-    }
-    .stat-label { font-size: 10px; color: #64748b; display: block; margin-bottom: 2px; font-weight: 500; }
-    .stat-val { font-size: 12px; font-weight: 700; color: #1e293b; }
-
-    /* Grafico 24h */
-    .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .chart-box {
-      background: rgba(255, 255, 255, 0.75);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 16px;
-      padding: 8px 6px 4px 6px;
-    }
-    canvas { width: 100% !important; height: 115px !important; display: block; }
-
-    /* Lista Ora per Ora (48h) */
-    .hourly-scroll {
-      flex: 1; /* Occupa lo spazio disponibile restante */
-      min-height: 0; /* Permette lo scroll interno al flexbox */
-      overflow-y: auto;
-      padding-right: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .hourly-scroll::-webkit-scrollbar { width: 5px; }
-    .hourly-scroll::-webkit-scrollbar-track { background: transparent; }
-    .hourly-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
-
-    .day-header {
-      font-size: 11px;
-      font-weight: 700;
-      color: #0284c7;
-      background: rgba(2, 132, 199, 0.08);
-      padding: 5px 8px;
-      border-radius: 6px;
-      margin-top: 4px;
-      margin-bottom: 2px;
-    }
-
-    .hourly-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(255, 255, 255, 0.65);
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      border-radius: 10px;
-      padding: 7px 10px;
-      font-size: 12px;
-    }
-    .hourly-time { font-weight: 600; width: 48px; color: #334155; }
-    .hourly-icon-desc { display: flex; align-items: center; gap: 6px; flex: 1; color: #64748b; font-size: 12px; }
-    .hourly-rain { font-size: 11px; color: #0284c7; font-weight: 600; width: 44px; text-align: right; }
-    .hourly-temp { font-weight: 700; color: #0f172a; width: 32px; text-align: right; }
-
-    /* Pulsanti Azione */
-    .btn-group { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 8px; 
-      margin-top: 14px;
-    }
-    
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 11px;
-      border-radius: 14px;
-      font-size: 13px;
-      font-weight: 600;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-pdf {
-      color: #334155;
-      background: rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-    }
-    .btn-pdf:hover { background: rgba(0, 0, 0, 0.08); }
-
-    .btn-pwa {
-      background: #0284c7;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
-      display: none;
-    }
-    .btn-pwa:hover { background: #0369a1; }
-
-    .footer-time { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 12px; }
-  </style>
+  <!-- Tailwind CSS per lo stile UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js per il grafico delle temperature -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex justify-center items-start sm:py-6">
 
-  <div class="widget-card">
-    <!-- Header pulito senza puntini -->
-    <div class="mac-header">
-      <div class="widget-title">Aversa (CE) • Protezione Civile</div>
-      <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
-    </div>
-
-    <!-- Switcher Schede / Tabs -->
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('tab-live', this)">Meteo & Allerta</button>
-      <button class="tab-btn" onclick="switchTab('tab-hourly', this)">Prossimi 2gg</button>
-    </div>
-
-    <!-- TAB 1: Meteo Live & Allerta -->
-    <div id="tab-live" class="tab-pane active">
-      <div class="alert-section-header">
-        <span class="section-label">Allerte in Vigore</span>
-        <span class="update-time-top" id="updateTime">In verifica...</span>
+  <!-- Container App Mobile -->
+  <div class="w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100">
+    
+    <div class="p-5 space-y-5">
+      
+      <!-- Intestazione superiore -->
+      <div class="flex justify-between items-center text-xs font-semibold text-slate-500 tracking-wide uppercase">
+        <span>Aversa (CE) · Protezione Civile</span>
+        <button id="refreshBtn" onclick="loadAllData()" class="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600" title="Ricarica dati">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
       </div>
 
-      <!-- Card Allerta -->
-      <div class="base44-alert-card alert-card-verde" id="alertCard">
-        <div class="alert-icon-box" id="alertIcon">✅</div>
-        <div class="alert-content">
-          <div class="alert-title" id="alertTitle">Caricamento allerte...</div>
-          <div><span class="alert-badge alert-badge-verde" id="alertBadge">--</span></div>
-          <div class="alert-summary alert-text-verde" id="alertSummary">Attendere prego.</div>
-          <div class="school-status-box" id="schoolStatus">🏫 Scuole ad Aversa: APERTE</div>
+      <!-- Tab Selettore (Meteo & Allerta / Prossimi 2gg) -->
+      <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 font-medium text-xs">
+        <button id="tabToday" onclick="switchTab('today')" class="flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all">
+          Meteo & Allerta
+        </button>
+        <button id="tabForecast" onclick="switchTab('forecast')" class="flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">
+          Prossimi 2gg
+        </button>
+      </div>
+
+      <!-- VISTA 1: OGGI & ALLERTA -->
+      <div id="viewToday" class="space-y-5">
+        
+        <!-- CARD ALLERTA METEO -->
+        <div id="alertCard" class="p-4 rounded-2xl border transition-all space-y-2">
+          <div class="flex justify-between items-start">
+            <div class="flex items-center gap-2">
+              <span id="alertIcon" class="text-lg">⚠️</span>
+              <h2 id="alertTitle" class="font-bold text-sm tracking-tight">Caricamento allerta...</h2>
+            </div>
+            <span id="alertUpdatedAt" class="text-[10px] opacity-70 font-mono">--/--/----, --:--</span>
+          </div>
+
+          <p id="alertMessage" class="text-xs leading-relaxed opacity-90">
+            Lettura bollettino della Protezione Civile in corso...
+          </p>
+
+          <div class="pt-2 border-t border-black/5 flex items-center gap-2 text-xs font-semibold">
+            <span>🏫 Scuole ad Aversa:</span>
+            <span id="schoolStatus" class="px-2 py-0.5 rounded-full text-[11px]">In verifica...</span>
+          </div>
+        </div>
+
+        <!-- CONDORNI METEO ATTUALI -->
+        <div class="text-center py-2 space-y-1">
+          <h1 class="text-lg font-bold text-slate-800">Aversa</h1>
+          <div id="currentTemp" class="text-5xl font-black tracking-tight text-slate-900">--°</div>
+          <div id="weatherDesc" class="text-xs font-medium text-slate-500 capitalize">Aggiornamento meteo...</div>
+        </div>
+
+        <!-- GRIGLIA STATISTICHE (Vento, Pioggia, Umidità) -->
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">Vento</div>
+            <div id="windSpeed" class="text-xs font-bold text-slate-700 mt-1">-- km/h</div>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">Pioggia Oggi</div>
+            <div id="rainToday" class="text-xs font-bold text-slate-700 mt-1">-- mm</div>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">Umidità</div>
+            <div id="humidity" class="text-xs font-bold text-slate-700 mt-1">-- %</div>
+          </div>
+        </div>
+
+        <!-- GRAFICO TEMPERATURE 24H -->
+        <div class="space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase">EVOLUZIONE TEMPERATURE (24H)</div>
+          <div class="h-36 w-full bg-slate-50 rounded-2xl p-2 border border-slate-100 relative">
+            <canvas id="tempChartCanvas"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- VISTA 2: PREVISIONI PROSSIMI 2 GIORNI -->
+      <div id="viewForecast" class="hidden space-y-3">
+        <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-2">Previsioni Meteo Aversa</div>
+        <div id="forecastContainer" class="space-y-2">
+          <!-- Popolato dinamicamente da JS -->
         </div>
       </div>
 
-      <!-- Meteo Principale -->
-      <div class="main-temp">
-        <div class="city">Aversa</div>
-        <div class="temp-val" id="currentTemp">--°</div>
-        <div class="condition" id="weatherCondition">Caricamento meteo...</div>
-      </div>
-
-      <!-- Metriche -->
-      <div class="grid-stats">
-        <div class="stat-card">
-          <span class="stat-label">Vento</span>
-          <span class="stat-val" id="windSpeed">-- km/h</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Pioggia Oggi</span>
-          <span class="stat-val" id="rainAmount">-- mm</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Umidità</span>
-          <span class="stat-val" id="humidityVal">-- %</span>
-        </div>
-      </div>
-
-      <!-- Grafico Temperature 24 Ore -->
-      <div class="sec-title">Evoluzione Temperature (24h)</div>
-      <div class="chart-box">
-        <canvas id="tempChart"></canvas>
-      </div>
     </div>
 
-    <!-- TAB 2: Ora per Ora 48h -->
-    <div id="tab-hourly" class="tab-pane">
-      <div class="sec-title">Previsioni Orarie • Prossimi 2 Giorni</div>
-      <div class="hourly-scroll" id="hourlyContainer">
-        <div class="hourly-row">Caricamento previsioni orarie...</div>
-      </div>
-    </div>
-
-    <!-- Pulsanti Azione -->
-    <div class="btn-group">
-      <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener noreferrer" class="btn btn-pdf">
-        🌐 Portale Protezione Civile Campania
+    <!-- PIÈ DI PAGINA & PULSANTI -->
+    <div class="p-5 bg-slate-50 border-t border-slate-100 space-y-2 rounded-b-3xl">
+      <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener" class="w-full py-2.5 px-4 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors shadow-sm">
+        <span>🌐 Portale Protezione Civile Campania</span>
       </a>
-      <button id="installBtn" class="btn btn-pwa">📲 Installa come App su Mac / Smartphone</button>
+
+      <button id="installBtn" class="hidden w-full py-2.5 px-4 bg-sky-600 text-white text-xs font-semibold rounded-2xl flex items-center justify-center gap-2 hover:bg-sky-700 transition-colors shadow-sm">
+        <span>📱 Installa come App su Mac / Smartphone</span>
+      </button>
+
+      <div class="text-center text-[10px] text-slate-400 pt-1">
+        Dati meteo: Open-Meteo · Allerte via Protezione Civile
+      </div>
     </div>
 
-    <div class="footer-time">Dati meteo: Open-Meteo · Allerte via Protezione Civile</div>
   </div>
 
+  <!-- SCRIPT LOGICA APPLICAZIONE -->
   <script>
-    // Unica funzione centralizzata per tradurre i codici meteo WMO
-    function getWeatherDesc(code) {
-      var map = {
-        0: { text: 'Sereno', icon: '☀️' },
-        1: { text: 'Quasi Sereno', icon: '🌤️' },
-        2: { text: 'Poco Nuvoloso', icon: '⛅' },
-        3: { text: 'Coperto', icon: '☁️' },
-        45: { text: 'Nebbia', icon: '🌫️' },
-        51: { text: 'Pioggerella', icon: '🌧️' },
-        61: { text: 'Pioggia', icon: '🌧️' },
-        63: { text: 'Pioggia Forte', icon: '🌧️' },
-        80: { text: 'Rovesci', icon: '🌦️' },
-        95: { text: 'Temporale', icon: '⛈️' },
-        96: { text: 'Temporale Forte', icon: '⛈️' }
+    let tempChartInstance = null;
+    let deferredPrompt = null;
+
+    // -------------------------------------------------------------
+    // 1. PLUGIN CHART.JS: Linea verticale orario attuale (Rosso)
+    // -------------------------------------------------------------
+    const currentTimeLinePlugin = {
+      id: 'currentTimeLine',
+      afterDraw: (chart) => {
+        const now = new Date();
+        const currentHour = now.getHours();
+
+        const xAxis = chart.scales.x;
+        const yAxis = chart.scales.y;
+
+        if (xAxis && yAxis && currentHour < chart.data.labels.length) {
+          const xPixel = xAxis.getPixelForTick(currentHour);
+          const ctx = chart.ctx;
+
+          ctx.save();
+
+          // Disegna linea verticale tratteggiata
+          ctx.beginPath();
+          ctx.setLineDash([4, 4]);
+          ctx.moveTo(xPixel, yAxis.top);
+          ctx.lineTo(xPixel, yAxis.bottom);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#ef4444';
+          ctx.stroke();
+
+          // Disegna pallino rosso in cima
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.arc(xPixel, yAxis.top, 4, 0, 2 * Math.PI);
+          ctx.fillStyle = '#ef4444';
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+    };
+
+    // -------------------------------------------------------------
+    // 2. MAPPATURA CODICI METEO WMO -> TESTO & ICONA
+    // -------------------------------------------------------------
+    function getWmoWeatherDetails(code) {
+      const map = {
+        0: { desc: 'Sereno', icon: '☀️' },
+        1: { desc: 'Prevalentemente sereno', icon: '🌤️' },
+        2: { desc: 'Parzialmente nuvoloso', icon: '⛅' },
+        3: { desc: 'Coperto', icon: '☁️' },
+        45: { desc: 'Nebbia', icon: '🌫️' },
+        48: { desc: 'Nebbia con brina', icon: '🌫️' },
+        51: { desc: 'Pioviggine leggera', icon: '🌦️' },
+        53: { desc: 'Pioviggine moderata', icon: '🌦️' },
+        55: { desc: 'Pioviggine fitta', icon: '🌧️' },
+        61: { desc: 'Pioggia debole', icon: '🌧️' },
+        63: { desc: 'Pioggia moderata', icon: '🌧️' },
+        65: { desc: 'Pioggia forte', icon: '🌧️' },
+        80: { desc: 'Rovesci di pioggia', icon: '🌦️' },
+        95: { desc: 'Temporale', icon: '⛈️' }
       };
-      return map[code] || { text: 'Variabile', icon: '🌤️' };
+      return map[code] || { desc: 'Variabile', icon: '🌤️' };
     }
 
-    // Navigazione tra i Tab (ottimizzata)
-    function switchTab(tabId, btnElement) {
-      var activePane = document.querySelector('.tab-pane.active');
-      if(activePane) activePane.classList.remove('active');
-      
-      var activeBtn = document.querySelector('.tab-btn.active');
-      if(activeBtn) activeBtn.classList.remove('active');
-      
-      document.getElementById(tabId).classList.add('active');
-      btnElement.classList.add('active');
+    // -------------------------------------------------------------
+    // 3. CAMBIO TAB (Meteo & Allerta / Prossimi 2gg)
+    // -------------------------------------------------------------
+    function switchTab(tab) {
+      const btnToday = document.getElementById('tabToday');
+      const btnForecast = document.getElementById('tabForecast');
+      const viewToday = document.getElementById('viewToday');
+      const viewForecast = document.getElementById('viewForecast');
 
-      if (tabId === 'tab-live' && window.hourlyTemps24) {
-        setTimeout(function() { drawChart(window.hourlyTemps24, window.hourlyTimes24); }, 50);
+      if (tab === 'today') {
+        btnToday.className = 'flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all';
+        btnForecast.className = 'flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
+        viewToday.classList.remove('hidden');
+        viewForecast.classList.add('hidden');
+      } else {
+        btnForecast.className = 'flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all';
+        btnToday.className = 'flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
+        viewForecast.classList.remove('hidden');
+        viewToday.classList.add('hidden');
       }
     }
 
-    function loadAlert() {
-      return fetch('./alert.json?v=' + new Date().getTime(), { cache: "no-store" })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          var alertCard = document.getElementById('alertCard');
-          var titleEl = document.getElementById('alertTitle');
-          var badgeEl = document.getElementById('alertBadge');
-          var summaryEl = document.getElementById('alertSummary');
-          var schoolEl = document.getElementById('schoolStatus');
-          var iconEl = document.getElementById('alertIcon');
-          var timeEl = document.getElementById('updateTime');
+    // -------------------------------------------------------------
+    // 4. CARICAMENTO DATI (alert.json + Open-Meteo)
+    // -------------------------------------------------------------
+    async function loadAllData() {
+      // A) Carica allerta da alert.json (bypassa la cache)
+      try {
+        const resAlert = await fetch('./alert.json', { cache: 'no-store' });
+        if (resAlert.ok) {
+          const alertData = await resAlert.json();
+          renderAlertUI(alertData);
+        }
+      } catch (err) {
+        console.error('Errore durante il caricamento di alert.json:', err);
+      }
 
-          if (timeEl && data.updated_at) timeEl.textContent = data.updated_at;
-
-          var status = (data.status || '').toUpperCase();
-          var isClosed = data.schools_closed === true;
-
-          // Ripristino classi base per la pulizia dinamica
-          alertCard.className = 'base44-alert-card';
-          badgeEl.className = 'alert-badge';
-          summaryEl.className = 'alert-summary';
-
-          // Gestione dinamica scuole
-          if (schoolEl) {
-            schoolEl.textContent = isClosed ? '🏫 Scuole ad Aversa: CHIUSE' : '🏫 Scuole ad Aversa: APERTE';
-            schoolEl.className = 'school-status-box ' + (isClosed ? 'school-closed' : 'school-open');
-          }
-
-          // Assegnazione classi di stile CSS in base all'Allerta
-          if (status.indexOf('ARANCION') !== -1) {
-            if (iconEl) iconEl.textContent = '⚠️';
-            if (titleEl) titleEl.textContent = 'Allerta Meteo Arancione (Zona 1 - Piana Campana)';
-            alertCard.classList.add('alert-card-arancione');
-            badgeEl.classList.add('alert-badge-arancione');
-            badgeEl.textContent = 'Moderata';
-            summaryEl.classList.add('alert-text-arancione');
-            summaryEl.textContent = data.message || 'Fenomeni temporaleschi intensi.';
-          } else if (status.indexOf('GIALL') !== -1) {
-            if (iconEl) iconEl.textContent = '⚠️';
-            if (titleEl) titleEl.textContent = 'Allerta Meteo Gialla (Zona 1 - Piana Campana)';
-            alertCard.classList.add('alert-card-gialla');
-            badgeEl.classList.add('alert-badge-gialla');
-            badgeEl.textContent = 'Ordinaria';
-            summaryEl.classList.add('alert-text-gialla');
-            summaryEl.textContent = data.message || 'Possibili rovesci e temporali locali.';
-          } else if (status.indexOf('ROSS') !== -1) {
-            if (iconEl) iconEl.textContent = '🚨';
-            if (titleEl) titleEl.textContent = 'Allerta Meteo Rossa (Zona 1 - Piana Campana)';
-            alertCard.classList.add('alert-card-rossa');
-            badgeEl.classList.add('alert-badge-rossa');
-            badgeEl.textContent = 'Elevata';
-            summaryEl.classList.add('alert-text-rossa');
-            summaryEl.textContent = data.message || 'Criticità elevata per precipitazioni molto intense.';
-          } else {
-            if (iconEl) iconEl.textContent = '✅';
-            if (titleEl) titleEl.textContent = 'Nessuna Allerta Meteo in Vigore';
-            alertCard.classList.add('alert-card-verde');
-            badgeEl.classList.add('alert-badge-verde');
-            badgeEl.textContent = 'Verde';
-            summaryEl.classList.add('alert-text-verde');
-            summaryEl.textContent = data.message || 'Condizioni meteorologiche nella norma.';
-          }
-        })
-        .catch(function(err) {
-          console.warn("Errore caricamento alert.json:", err);
-        });
+      // B) Carica dati meteo Aversa da Open-Meteo
+      try {
+        const urlMeteo = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.206&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,rain_sum&timezone=Europe%2FRome';
+        const resMeteo = await fetch(urlMeteo, { cache: 'no-store' });
+        if (resMeteo.ok) {
+          const meteoData = await resMeteo.json();
+          renderWeatherUI(meteoData);
+        }
+      } catch (err) {
+        console.error('Errore durante il caricamento dei dati Open-Meteo:', err);
+      }
     }
 
-    function loadMeteo() {
-      var url = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.205&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m&daily=precipitation_sum&timezone=Europe%2FRome&forecast_days=3';
-      return fetch(url, { cache: "no-store" })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          if (data && data.current) {
-            document.getElementById('currentTemp').textContent = Math.round(data.current.temperature_2m) + '°';
-            document.getElementById('windSpeed').textContent = data.current.wind_speed_10m + ' km/h';
-            document.getElementById('humidityVal').textContent = data.current.relative_humidity_2m + ' %';
-            document.getElementById('rainAmount').textContent = ((data.daily && data.daily.precipitation_sum) ? data.daily.precipitation_sum[0] : 0) + ' mm';
+    // -------------------------------------------------------------
+    // 5. RENDERING BANNER ALLERTA
+    // -------------------------------------------------------------
+    function renderAlertUI(data) {
+      const card = document.getElementById('alertCard');
+      const title = document.getElementById('alertTitle');
+      const message = document.getElementById('alertMessage');
+      const icon = document.getElementById('alertIcon');
+      const updated = document.getElementById('alertUpdatedAt');
+      const schoolStatus = document.getElementById('schoolStatus');
 
-            var weatherInfo = getWeatherDesc(data.current.weather_code);
-            document.getElementById('weatherCondition').textContent = weatherInfo.text;
-          }
+      updated.textContent = data.updated_at || '';
+      message.textContent = data.message || 'Nessun messaggio disponibile.';
 
-          if (data && data.hourly) {
-            window.hourlyTemps24 = data.hourly.temperature_2m.slice(0, 24);
-            window.hourlyTimes24 = data.hourly.time.slice(0, 24);
+      // Stile scuole
+      if (data.schools_closed) {
+        schoolStatus.textContent = 'CHIUSE';
+        schoolStatus.className = 'px-2 py-0.5 rounded-full text-[11px] bg-red-100 text-red-700 font-bold';
+      } else {
+        schoolStatus.textContent = 'APERTE';
+        schoolStatus.className = 'px-2 py-0.5 rounded-full text-[11px] bg-emerald-100 text-emerald-800 font-bold';
+      }
 
-            drawChart(window.hourlyTemps24, window.hourlyTimes24);
-            renderHourlyForecast(data.hourly);
-          }
-        })
-        .catch(function(err) {
-          console.error("Errore recupero meteo:", err);
-        });
+      // Stile cromatico in base allo stato
+      const status = (data.status || 'VERDE').toUpperCase();
+      if (status === 'ROSSA') {
+        card.className = 'p-4 rounded-2xl border bg-red-50 border-red-200 text-red-900 space-y-2';
+        title.textContent = 'Allerta Meteo Rossa (Zona 1 - Piana Campana)';
+        icon.textContent = '🚨';
+      } else if (status === 'ARANCIONE') {
+        card.className = 'p-4 rounded-2xl border bg-orange-50 border-orange-200 text-orange-900 space-y-2';
+        title.textContent = 'Allerta Meteo Arancione (Zona 1 - Piana Campana)';
+        icon.textContent = '📙';
+      } else if (status === 'GIALLA') {
+        card.className = 'p-4 rounded-2xl border bg-amber-50 border-amber-200 text-amber-900 space-y-2';
+        title.textContent = 'Allerta Meteo Gialla (Zona 1 - Piana Campana)';
+        icon.textContent = '⚠️';
+      } else {
+        card.className = 'p-4 rounded-2xl border bg-emerald-50 border-emerald-200 text-emerald-900 space-y-2';
+        title.textContent = 'Nessuna Allerta In Vigore (Zona 1 - Piana Campana)';
+        icon.textContent = '✅';
+      }
     }
 
-    function renderHourlyForecast(hourlyData) {
-      var container = document.getElementById('hourlyContainer');
-      if (!container || !hourlyData) return;
+    // -------------------------------------------------------------
+    // 6. RENDERING METEO & GRAFICO TEMPERATURE
+    // -------------------------------------------------------------
+    function renderWeatherUI(data) {
+      // Dati attuali
+      const current = data.current;
+      const weatherInfo = getWmoWeatherDetails(current.weather_code);
+
+      document.getElementById('currentTemp').textContent = `${Math.round(current.temperature_2m)}°`;
+      document.getElementById('weatherDesc').textContent = `${weatherInfo.icon} ${weatherInfo.desc}`;
+      document.getElementById('windSpeed').textContent = `${Math.round(current.wind_speed_10m)} km/h`;
+      document.getElementById('humidity').textContent = `${current.relative_humidity_2m} %`;
+      
+      const rainToday = data.daily?.rain_sum?.[0] ?? 0;
+      document.getElementById('rainToday').textContent = `${rainToday} mm`;
+
+      // Grafico 24 ore
+      const hourlyTemps = data.hourly.temperature_2m.slice(0, 24);
+      const hoursLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+
+      const ctx = document.getElementById('tempChartCanvas').getContext('2d');
+      if (tempChartInstance) {
+        tempChartInstance.destroy();
+      }
+
+      tempChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: hoursLabels,
+          datasets: [{
+            label: 'Temperatura (°C)',
+            data: hourlyTemps,
+            borderColor: '#0284c7',
+            backgroundColor: 'rgba(2, 132, 199, 0.08)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 1,
+            pointHoverRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 9 }, maxRotation: 0 }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: { font: { size: 9 } }
+            }
+          }
+        },
+        plugins: [currentTimeLinePlugin]
+      });
+
+      // Rendering Prossimi 2 giorni
+      renderForecastList(data.daily);
+    }
+
+    // -------------------------------------------------------------
+    // 7. RENDERING LISTA PROSSIMI 2 GIORNI
+    // -------------------------------------------------------------
+    function renderForecastList(daily) {
+      const container = document.getElementById('forecastContainer');
       container.innerHTML = '';
 
-      var now = new Date();
-      var lastDayString = '';
-      var startIndex = 0;
+      if (!daily || !daily.time) return;
 
-      for (var i = 0; i < hourlyData.time.length; i++) {
-        if (new Date(hourlyData.time[i]) >= now) {
-          startIndex = Math.max(0, i - 1);
-          break;
-        }
-      }
+      // Mostra i prossimi 2 giorni (indice 1 e 2)
+      for (let i = 1; i <= 2; i++) {
+        if (!daily.time[i]) continue;
 
-      var hoursToDisplay = hourlyData.time.slice(startIndex, startIndex + 48);
+        const dateObj = new Date(daily.time[i]);
+        const dayName = dateObj.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'short' });
+        const code = daily.weather_code[i];
+        const info = getWmoWeatherDetails(code);
+        const maxTemp = Math.round(daily.temperature_2m_max[i]);
+        const minTemp = Math.round(daily.temperature_2m_min[i]);
+        const rain = daily.rain_sum[i] ?? 0;
 
-      for (var idx = 0; idx < hoursToDisplay.length; idx++) {
-        var realIdx = startIndex + idx;
-        var dateObj = new Date(hoursToDisplay[idx]);
-
-        var options = { weekday: 'long', day: 'numeric', month: 'short' };
-        var dayString = dateObj.toLocaleDateString('it-IT', options);
-
-        if (dayString !== lastDayString) {
-          lastDayString = dayString;
-          var header = document.createElement('div');
-          header.className = 'day-header';
-          header.textContent = dayString.toUpperCase();
-          container.appendChild(header);
-        }
-
-        var hoursFormatted = (dateObj.getHours() < 10 ? '0' : '') + dateObj.getHours() + ':00';
-        var weatherInfo = getWeatherDesc(hourlyData.weather_code[realIdx]);
-        var temp = Math.round(hourlyData.temperature_2m[realIdx]);
-        var rainProb = hourlyData.precipitation_probability ? hourlyData.precipitation_probability[realIdx] : 0;
-
-        var row = document.createElement('div');
-        row.className = 'hourly-row';
-        row.innerHTML = '<span class="hourly-time">' + hoursFormatted + '</span>' +
-                        '<span class="hourly-icon-desc"><span>' + weatherInfo.icon + '</span> ' + weatherInfo.text + '</span>' +
-                        '<span class="hourly-rain">' + (rainProb > 0 ? '💧 ' + rainProb + '%' : '') + '</span>' +
-                        '<span class="hourly-temp">' + temp + '°</span>';
-        container.appendChild(row);
+        const cardHtml = `
+          <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${info.icon}</span>
+              <div>
+                <div class="text-xs font-bold capitalize text-slate-800">${dayName}</div>
+                <div class="text-[11px] text-slate-500">${info.desc} ${rain > 0 ? `· ☔ ${rain} mm` : ''}</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-800">${maxTemp}°</span>
+              <span class="text-xs text-slate-400 font-medium"> / ${minTemp}°</span>
+            </div>
+          </div>
+        `;
+        container.innerHTML += cardHtml;
       }
     }
 
-    function drawChart(temps, times) {
-      var canvas = document.getElementById('tempChart');
-      if (!canvas || !temps || temps.length === 0) return;
-
-      var ctx = canvas.getContext('2d');
-      var dpr = window.devicePixelRatio || 1;
-      
-      canvas.width = canvas.offsetWidth * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
-      ctx.scale(dpr, dpr);
-
-      var w = canvas.offsetWidth;
-      var h = canvas.offsetHeight;
-      if (w === 0 || h === 0) return;
-
-      var paddingTop = 20;
-      var paddingBottom = 24;
-      var paddingLeft = 32;
-      var paddingRight = 10;
-
-      var graphWidth = w - paddingLeft - paddingRight;
-      var graphHeight = h - paddingTop - paddingBottom;
-
-      var minTemp = Math.min.apply(null, temps);
-      var maxTemp = Math.max.apply(null, temps);
-      var range = (maxTemp - minTemp) || 1;
-
-      ctx.clearRect(0, 0, w, h);
-
-      ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      ctx.fillStyle = '#334155';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-
-      var midTemp = Math.round((maxTemp + minTemp) / 2);
-      var yTicks = [maxTemp, midTemp, minTemp];
-      var uniqueTicks = yTicks.filter(function(v, i, self) { return self.indexOf(v) === i; });
-
-      uniqueTicks.forEach(function(tVal) {
-        var yPos = paddingTop + graphHeight - ((tVal - minTemp) / range) * graphHeight;
-        
-        ctx.beginPath();
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = 'rgba(15, 23, 42, 0.12)';
-        ctx.moveTo(paddingLeft, yPos);
-        ctx.lineTo(w - paddingRight, yPos);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillText(Math.round(tVal) + '°', paddingLeft - 6, yPos);
-      });
-
-      var points = [];
-      for (var i = 0; i < temps.length; i++) {
-        var x = paddingLeft + (i / (temps.length - 1)) * graphWidth;
-        var y = paddingTop + graphHeight - ((temps[i] - minTemp) / range) * graphHeight;
-        points.push({ x: x, y: y, temp: temps[i] });
-      }
-
-      var grad = ctx.createLinearGradient(0, paddingTop, 0, h - paddingBottom);
-      grad.addColorStop(0, 'rgba(2, 132, 199, 0.32)');
-      grad.addColorStop(1, 'rgba(2, 132, 199, 0.02)');
-
-      ctx.beginPath();
-      for (var j = 0; j < points.length; j++) {
-        if (j === 0) ctx.moveTo(points[j].x, points[j].y);
-        else ctx.lineTo(points[j].x, points[j].y);
-      }
-
-      ctx.strokeStyle = '#0284c7';
-      ctx.lineWidth = 2.8;
-      ctx.stroke();
-
-      ctx.lineTo(points[points.length - 1].x, h - paddingBottom);
-      ctx.lineTo(points[0].x, h - paddingBottom);
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(15, 23, 42, 0.15)';
-      ctx.lineWidth = 1;
-      ctx.moveTo(paddingLeft, h - paddingBottom);
-      ctx.lineTo(w - paddingRight, h - paddingBottom);
-      ctx.stroke();
-
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = '#475569';
-      ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-
-      var stepIndexes = [0, 6, 12, 18, 23];
-      stepIndexes.forEach(function(idx) {
-        if (idx < points.length) {
-          var pt = points[idx];
-          var labelText = '';
-          if (times && times[idx]) {
-            var d = new Date(times[idx]);
-            labelText = (d.getHours() < 10 ? '0' : '') + d.getHours() + ':00';
-          } else {
-            labelText = idx + 'h';
-          }
-          ctx.fillText(labelText, pt.x, h - paddingBottom + 6);
-        }
-      });
-
-      var maxIdx = temps.indexOf(maxTemp);
-      var minIdx = temps.indexOf(minTemp);
-
-      [maxIdx, minIdx].forEach(function(pIdx) {
-        if (pIdx >= 0 && pIdx < points.length) {
-          var p = points[pIdx];
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
-          ctx.fillStyle = '#0284c7';
-          ctx.fill();
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = '#ffffff';
-          ctx.stroke();
-        }
+    // -------------------------------------------------------------
+    // 8. REGISTRAZIONE SERVICE WORKER & PROMPT INSTALLAZIONE PWA
+    // -------------------------------------------------------------
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('Service Worker registrato con successo.'))
+          .catch(err => console.error('Errore registrazione Service Worker:', err));
       });
     }
 
-    function manualRefresh() {
-      var btn = document.getElementById('refreshBtn');
-      if (btn) btn.classList.add('spinning');
-
-      Promise.all([loadAlert(), loadMeteo()])
-        .then(function() {
-          setTimeout(function() {
-            if (btn) btn.classList.remove('spinning');
-          }, 600);
-        })
-        .catch(function() {
-          if (btn) btn.classList.remove('spinning');
-        });
-    }
-
-    var deferredPrompt;
-    window.addEventListener('beforeinstallprompt', function(e) {
+    const installBtn = document.getElementById('installBtn');
+    window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      var btn = document.getElementById('installBtn');
-      if (btn) {
-        btn.style.display = 'flex';
-        btn.onclick = function() {
-          btn.style.display = 'none';
-          deferredPrompt.prompt();
-        };
+      installBtn.classList.remove('hidden');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          installBtn.classList.add('hidden');
+        }
+        deferredPrompt = null;
       }
     });
 
-    // Registrazione Service Worker per PWABuilder / PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js').catch(function(err) {
-          console.warn('Service Worker non registrato:', err);
-        });
-      });
-    }
-
-    loadAlert();
-    loadMeteo();
-
-    setInterval(manualRefresh, 300000);
+    // Avvio al caricamento della pagina
+    loadAllData();
   </script>
 </body>
 </html>
