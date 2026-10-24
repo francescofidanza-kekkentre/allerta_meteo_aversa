@@ -97,10 +97,10 @@
 
       </div>
 
-      <!-- VISTA 2: PREVISIONI PROSSIMI 2 GIORNI -->
+      <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI -->
       <div id="viewForecast" class="hidden space-y-3">
-        <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-2">Previsioni Meteo Aversa</div>
-        <div id="forecastContainer" class="space-y-2">
+        <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1">PREVISIONI ORARIE • PROSSIMI 2 GIORNI</div>
+        <div id="forecastContainer" class="space-y-1.5">
           <!-- Popolato dinamicamente da JS -->
         </div>
       </div>
@@ -142,12 +142,10 @@
         const meta = chart.getDatasetMeta(0);
         if (!meta || !meta.data || !meta.data[currentHour]) return;
 
-        // Recupera la posizione esatta (X, Y) del punto sulla linea blu
         const currentPoint = meta.data[currentHour];
         let xPixel = currentPoint.x;
         let yPixel = currentPoint.y;
 
-        // Calcola l'avanzamento progressivo in base ai minuti correnti verso l'ora successiva
         if (currentHour < 23 && meta.data[currentHour + 1]) {
           const nextPoint = meta.data[currentHour + 1];
           const minuteRatio = currentMinute / 60;
@@ -160,7 +158,6 @@
 
         ctx.save();
 
-        // 1. Disegna linea verticale tratteggiata
         ctx.beginPath();
         ctx.setLineDash([4, 4]);
         ctx.moveTo(xPixel, yAxis.top);
@@ -169,7 +166,6 @@
         ctx.strokeStyle = '#ef4444';
         ctx.stroke();
 
-        // 2. Disegna il pallino rosso sul punto d'intersezione con contorno bianco
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.arc(xPixel, yPixel, 5, 0, 2 * Math.PI);
@@ -189,18 +185,19 @@
     function getWmoWeatherDetails(code) {
       const map = {
         0: { desc: 'Sereno', icon: '☀️' },
-        1: { desc: 'Prevalentemente sereno', icon: '🌤️' },
-        2: { desc: 'Parzialmente nuvoloso', icon: '⛅' },
+        1: { desc: 'Quasi Sereno', icon: '🌤️' },
+        2: { desc: 'Poco Nuvoloso', icon: '⛅' },
         3: { desc: 'Coperto', icon: '☁️' },
         45: { desc: 'Nebbia', icon: '🌫️' },
         48: { desc: 'Nebbia con brina', icon: '🌫️' },
         51: { desc: 'Pioviggine leggera', icon: '🌦️' },
-        53: { desc: 'Pioviggine moderata', icon: '🌦️' },
+        53: { desc: 'Pioviggine', icon: '🌦️' },
         55: { desc: 'Pioviggine fitta', icon: '🌧️' },
         61: { desc: 'Pioggia debole', icon: '🌧️' },
-        63: { desc: 'Pioggia moderata', icon: '🌧️' },
+        63: { desc: 'Pioggia', icon: '🌧️' },
         65: { desc: 'Pioggia forte', icon: '🌧️' },
-        80: { desc: 'Rovesci di pioggia', icon: '🌦️' },
+        80: { desc: 'Rovesci', icon: '🌦️' },
+        81: { desc: 'Rovesci intensi', icon: '🌦️' },
         95: { desc: 'Temporale', icon: '⛈️' }
       };
       return map[code] || { desc: 'Variabile', icon: '🌤️' };
@@ -229,10 +226,9 @@
     }
 
     // -------------------------------------------------------------
-    // 4. CARICAMENTO DATI (alert.json + Open-Meteo)
+    // 4. CARICAMENTO DATI (alert.json + Open-Meteo per 3 giorni)
     // -------------------------------------------------------------
     async function loadAllData() {
-      // A) Carica allerta da alert.json (bypassa la cache)
       try {
         const resAlert = await fetch('./alert.json', { cache: 'no-store' });
         if (resAlert.ok) {
@@ -243,9 +239,8 @@
         console.error('Errore durante il caricamento di alert.json:', err);
       }
 
-      // B) Carica dati meteo Aversa da Open-Meteo
       try {
-        const urlMeteo = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.206&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,rain_sum&timezone=Europe%2FRome';
+        const urlMeteo = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.206&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,rain_sum&timezone=Europe%2FRome&forecast_days=3';
         const resMeteo = await fetch(urlMeteo, { cache: 'no-store' });
         if (resMeteo.ok) {
           const meteoData = await resMeteo.json();
@@ -270,7 +265,6 @@
       updated.textContent = data.updated_at || '';
       message.textContent = data.message || 'Nessun messaggio disponibile.';
 
-      // Stile scuole
       if (data.schools_closed) {
         schoolStatus.textContent = 'CHIUSE';
         schoolStatus.className = 'px-2 py-0.5 rounded-full text-[11px] bg-red-100 text-red-700 font-bold';
@@ -279,7 +273,6 @@
         schoolStatus.className = 'px-2 py-0.5 rounded-full text-[11px] bg-emerald-100 text-emerald-800 font-bold';
       }
 
-      // Stile cromatico in base allo stato
       const status = (data.status || 'VERDE').toUpperCase();
       if (status === 'ROSSA') {
         card.className = 'p-4 rounded-2xl border bg-red-50 border-red-200 text-red-900 space-y-2';
@@ -304,7 +297,6 @@
     // 6. RENDERING METEO & GRAFICO TEMPERATURE
     // -------------------------------------------------------------
     function renderWeatherUI(data) {
-      // Dati attuali
       const current = data.current;
       const weatherInfo = getWmoWeatherDetails(current.weather_code);
 
@@ -316,7 +308,7 @@
       const rainToday = data.daily?.rain_sum?.[0] ?? 0;
       document.getElementById('rainToday').textContent = `${rainToday} mm`;
 
-      // Grafico 24 ore
+      // Grafico prime 24 ore (Oggi)
       const hourlyTemps = data.hourly.temperature_2m.slice(0, 24);
       const hoursLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
@@ -360,47 +352,76 @@
         plugins: [currentTimeLinePlugin]
       });
 
-      // Rendering Prossimi 2 giorni
-      renderForecastList(data.daily);
+      // Rendering Lista Oraria verticale stile Screenshot
+      renderForecastList(data.hourly);
     }
 
     // -------------------------------------------------------------
-    // 7. RENDERING LISTA PROSSIMI 2 GIORNI
+    // 7. RENDERING LISTA ORARIA VERTICALE (Stile Screenshot)
     // -------------------------------------------------------------
-    function renderForecastList(daily) {
+    function renderForecastList(hourly) {
       const container = document.getElementById('forecastContainer');
       container.innerHTML = '';
 
-      if (!daily || !daily.time) return;
+      if (!hourly || !hourly.time) return;
 
-      // Mostra i prossimi 2 giorni (indice 1 e 2)
-      for (let i = 1; i <= 2; i++) {
-        if (!daily.time[i]) continue;
+      const now = new Date();
+      
+      // Individua l'ora di partenza (dall'ora corrente in poi)
+      let startIndex = 0;
+      for (let i = 0; i < hourly.time.length; i++) {
+        const itemDate = new Date(hourly.time[i]);
+        if (itemDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours())) {
+          startIndex = i;
+          break;
+        }
+      }
 
-        const dateObj = new Date(daily.time[i]);
-        const dayName = dateObj.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'short' });
-        const code = daily.weather_code[i];
+      // Mostra le prossime 36 ore
+      const totalHoursToShow = 36;
+      const endIndex = Math.min(hourly.time.length, startIndex + totalHoursToShow);
+
+      let currentDayGroup = '';
+
+      for (let i = startIndex; i < endIndex; i++) {
+        const timeStr = hourly.time[i];
+        const dateObj = new Date(timeStr);
+
+        const dayName = dateObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+        const hourStr = dateObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+        const code = hourly.weather_code[i];
         const info = getWmoWeatherDetails(code);
-        const maxTemp = Math.round(daily.temperature_2m_max[i]);
-        const minTemp = Math.round(daily.temperature_2m_min[i]);
-        const rain = daily.rain_sum[i] ?? 0;
+        const temp = Math.round(hourly.temperature_2m[i]);
+        const pop = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
 
-        const cardHtml = `
-          <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <span class="text-2xl">${info.icon}</span>
-              <div>
-                <div class="text-xs font-bold capitalize text-slate-800">${dayName}</div>
-                <div class="text-[11px] text-slate-500">${info.desc} ${rain > 0 ? `· ☔ ${rain} mm` : ''}</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <span class="text-xs font-bold text-slate-800">${maxTemp}°</span>
-              <span class="text-xs text-slate-400 font-medium"> / ${minTemp}°</span>
+        // Se cambia il giorno, crea il banner azzurro di intestazione
+        if (dayName !== currentDayGroup) {
+          currentDayGroup = dayName;
+
+          const dayHeader = document.createElement('div');
+          dayHeader.className = 'bg-sky-50 text-sky-700 font-bold px-3 py-2 rounded-xl text-xs uppercase tracking-wide mt-3 mb-1.5';
+          dayHeader.textContent = dayName;
+          container.appendChild(dayHeader);
+        }
+
+        // Card della singola ora (riga verticale)
+        const row = document.createElement('div');
+        row.className = 'bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between text-xs mb-1.5 shadow-2xs';
+        row.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-slate-800 w-11">${hourStr}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-base">${info.icon}</span>
+              <span class="font-medium text-slate-600">${info.desc}</span>
             </div>
           </div>
+          <div class="flex items-center gap-3">
+            ${pop > 0 ? `<span class="text-sky-600 font-semibold text-[11px] flex items-center gap-0.5">💧 ${pop}%</span>` : ''}
+            <span class="font-bold text-slate-800 text-sm">${temp}°</span>
+          </div>
         `;
-        container.innerHTML += cardHtml;
+        container.appendChild(row);
       }
     }
 
