@@ -32,11 +32,11 @@
       </div>
 
       <!-- Tab Selettore (Meteo & Allerta / Prossimi 2gg) -->
-      <div class="bg-slate-100 p-1 rounded-2xl flex gap-1 font-medium text-xs">
-        <button id="tabToday" onclick="switchTab('today')" class="flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all">
+      <div class="bg-slate-100 p-1 rounded-2xl grid grid-cols-2 gap-1 font-medium text-xs">
+        <button id="tabToday" onclick="switchTab('today')" class="w-full py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all">
           Meteo & Allerta
         </button>
-        <button id="tabForecast" onclick="switchTab('forecast')" class="flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">
+        <button id="tabForecast" onclick="switchTab('forecast')" class="w-full py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">
           Prossimi 2gg
         </button>
       </div>
@@ -97,10 +97,10 @@
 
       </div>
 
-      <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI -->
+      <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI (Con altezza parificata a Tab 1) -->
       <div id="viewForecast" class="hidden space-y-3">
         <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1">PREVISIONI ORARIE • PROSSIMI 2 GIORNI</div>
-        <div id="forecastContainer" class="space-y-1.5">
+        <div id="forecastContainer" class="space-y-1.5 max-h-[500px] overflow-y-auto pr-1">
           <!-- Popolato dinamicamente da JS -->
         </div>
       </div>
@@ -212,14 +212,17 @@
       const viewToday = document.getElementById('viewToday');
       const viewForecast = document.getElementById('viewForecast');
 
+      const activeClasses = 'w-full py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all';
+      const inactiveClasses = 'w-full py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
+
       if (tab === 'today') {
-        btnToday.className = 'flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all';
-        btnForecast.className = 'flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
+        btnToday.className = activeClasses;
+        btnForecast.className = inactiveClasses;
         viewToday.classList.remove('hidden');
         viewForecast.classList.add('hidden');
       } else {
-        btnForecast.className = 'flex-1 py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-semibold transition-all';
-        btnToday.className = 'flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
+        btnForecast.className = activeClasses;
+        btnToday.className = inactiveClasses;
         viewForecast.classList.remove('hidden');
         viewToday.classList.add('hidden');
       }
@@ -367,7 +370,6 @@
 
       const now = new Date();
       
-      // Individua l'ora di partenza (dall'ora corrente in poi)
       let startIndex = 0;
       for (let i = 0; i < hourly.time.length; i++) {
         const itemDate = new Date(hourly.time[i]);
@@ -377,7 +379,6 @@
         }
       }
 
-      // Mostra le prossime 36 ore
       const totalHoursToShow = 36;
       const endIndex = Math.min(hourly.time.length, startIndex + totalHoursToShow);
 
@@ -395,7 +396,6 @@
         const temp = Math.round(hourly.temperature_2m[i]);
         const pop = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
 
-        // Se cambia il giorno, crea il banner azzurro di intestazione
         if (dayName !== currentDayGroup) {
           currentDayGroup = dayName;
 
@@ -405,7 +405,6 @@
           container.appendChild(dayHeader);
         }
 
-        // Card della singola ora (riga verticale)
         const row = document.createElement('div');
         row.className = 'bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between text-xs mb-1.5 shadow-2xs';
         row.innerHTML = `
