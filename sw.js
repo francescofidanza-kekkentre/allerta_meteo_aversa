@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aversa-meteo-v2';
+const CACHE_NAME = 'aversa-meteo-v14-10-2026';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
