@@ -41,11 +41,11 @@
         </button>
       </div>
 
-      <!-- CONTENITORE PRINCIPALE GRID OVERLAY (Garantisce altezza identica) -->
-      <div class="grid grid-cols-1 grid-rows-1 relative">
+      <!-- CONTENITORE CON OVERLAY ASSOLUTO (Garantisce altezza bloccata ed identica) -->
+      <div class="relative">
         
-        <!-- VISTA 1: OGGI & ALLERTA -->
-        <div id="viewToday" class="col-start-1 row-start-1 space-y-4">
+        <!-- VISTA 1: OGGI & ALLERTA (Definisce l'altezza naturale del blocco) -->
+        <div id="viewToday" class="space-y-4">
           
           <!-- INTESTAZIONE SEZIONE ALLERTA -->
           <div class="flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5 pt-1">
@@ -110,9 +110,9 @@
 
         </div>
 
-        <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI -->
-        <div id="viewForecast" class="col-start-1 row-start-1 flex flex-col h-full space-y-3 hidden">
-          <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase flex-shrink-0">PREVISIONI ORARIE • PROSSIMI 2 GIORNI</div>
+        <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI (Overlay vincolato all'altezza esatta della Vista 1) -->
+        <div id="viewForecast" class="absolute inset-0 flex flex-col space-y-3 hidden">
+          <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase shrink-0 pt-1">PREVISIONI ORARIE • PROSSIMI 2 GIORNI</div>
           <div id="forecastContainer" class="flex-1 min-h-0 overflow-y-auto pr-1 space-y-1.5">
             <!-- Popolato dinamicamente da JS -->
           </div>
@@ -219,7 +219,7 @@
     }
 
     // -------------------------------------------------------------
-    // 3. CAMBIO TAB CON ALTEZZA PARIFICATA PERFETTA
+    // 3. CAMBIO TAB (Meteo & Allerta / Prossimi 2gg)
     // -------------------------------------------------------------
     function switchTab(tab) {
       const btnToday = document.getElementById('tabToday');
@@ -233,13 +233,13 @@
       if (tab === 'today') {
         btnToday.className = activeClasses;
         btnForecast.className = inactiveClasses;
-        viewToday.className = 'col-start-1 row-start-1 space-y-4';
-        viewForecast.className = 'col-start-1 row-start-1 flex flex-col h-full space-y-3 hidden';
+        viewToday.classList.remove('invisible', 'pointer-events-none');
+        viewForecast.classList.add('hidden');
       } else {
         btnForecast.className = activeClasses;
         btnToday.className = inactiveClasses;
-        viewToday.className = 'col-start-1 row-start-1 space-y-4 invisible pointer-events-none';
-        viewForecast.className = 'col-start-1 row-start-1 flex flex-col h-full space-y-3';
+        viewToday.classList.add('invisible', 'pointer-events-none');
+        viewForecast.classList.remove('hidden');
       }
     }
 
