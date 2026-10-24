@@ -64,7 +64,7 @@
           </div>
         </div>
 
-        <!-- CONDORNI METEO ATTUALI -->
+        <!-- CONDIZIONI METEO ATTUALI -->
         <div class="text-center py-2 space-y-1">
           <h1 class="text-lg font-bold text-slate-800">Aversa</h1>
           <div id="currentTemp" class="text-5xl font-black tracking-tight text-slate-900">--°</div>
@@ -130,41 +130,51 @@
     let deferredPrompt = null;
 
     // -------------------------------------------------------------
-    // 1. PLUGIN CHART.JS: Linea verticale orario attuale (Rosso)
+    // 1. PLUGIN CHART.JS: Linea verticale orario e minuti attuali (Rosso)
     // -------------------------------------------------------------
     const currentTimeLinePlugin = {
       id: 'currentTimeLine',
       afterDraw: (chart) => {
         const now = new Date();
-        const currentHour = now.getHours();
+        const currentHour = now.getHours();   // es. 20
+        const currentMinute = now.getMinutes(); // es. 10
 
-        const xAxis = chart.scales.x;
-        const yAxis = chart.scales.y;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data[currentHour]) return;
 
-        if (xAxis && yAxis && currentHour < chart.data.labels.length) {
-          const xPixel = xAxis.getPixelForTick(currentHour);
-          const ctx = chart.ctx;
+        // Recupera la posizione x del punto esatto dell'ora corrente
+        const currentPoint = meta.data[currentHour];
+        let xPixel = currentPoint.x;
 
-          ctx.save();
-
-          // Disegna linea verticale tratteggiata
-          ctx.beginPath();
-          ctx.setLineDash([4, 4]);
-          ctx.moveTo(xPixel, yAxis.top);
-          ctx.lineTo(xPixel, yAxis.bottom);
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = '#ef4444';
-          ctx.stroke();
-
-          // Disegna pallino rosso in cima
-          ctx.setLineDash([]);
-          ctx.beginPath();
-          ctx.arc(xPixel, yAxis.top, 4, 0, 2 * Math.PI);
-          ctx.fillStyle = '#ef4444';
-          ctx.fill();
-
-          ctx.restore();
+        // Calcola l'avanzamento progressivo in base ai minuti correnti
+        if (currentHour < 23 && meta.data[currentHour + 1]) {
+          const nextPoint = meta.data[currentHour + 1];
+          const minuteRatio = currentMinute / 60;
+          xPixel += (nextPoint.x - currentPoint.x) * minuteRatio;
         }
+
+        const yAxis = chart.scales.y;
+        const ctx = chart.ctx;
+
+        ctx.save();
+
+        // Disegna linea verticale tratteggiata
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.moveTo(xPixel, yAxis.top);
+        ctx.lineTo(xPixel, yAxis.bottom);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ef4444';
+        ctx.stroke();
+
+        // Disegna pallino rosso in cima
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(xPixel, yAxis.top, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+
+        ctx.restore();
       }
     };
 
