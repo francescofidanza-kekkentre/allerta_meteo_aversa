@@ -41,7 +41,7 @@
         </button>
       </div>
 
-      <!-- CONTENITORE CON OVERLAY ASSOLUTO (Garantisce altezza bloccata ed identica) -->
+      <!-- CONTENITORE CON OVERLAY ASSOLUTO E COPERTURA OPACA BIANCA -->
       <div class="relative">
         
         <!-- VISTA 1: OGGI & ALLERTA (Definisce l'altezza naturale del blocco) -->
@@ -110,8 +110,8 @@
 
         </div>
 
-        <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI (Overlay vincolato all'altezza esatta della Vista 1) -->
-        <div id="viewForecast" class="absolute inset-0 flex flex-col space-y-3 hidden">
+        <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI (Con bg-white z-10 per coprire perfettamente la vista sottostante) -->
+        <div id="viewForecast" class="absolute inset-0 bg-white z-10 flex flex-col space-y-3 hidden">
           <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase shrink-0 pt-1">PREVISIONI ORARIE • PROSSIMI 2 GIORNI</div>
           <div id="forecastContainer" class="flex-1 min-h-0 overflow-y-auto pr-1 space-y-1.5">
             <!-- Popolato dinamicamente da JS -->
