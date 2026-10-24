@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "io.github.francescofidanza_kekkentre.twa",
-        "sha256_cert_fingerprints": ["27:8D:10:19:DA:3C:09:02:C8:79:9B:61:99:08:2B:18:A5:C1:26:4B:C0:CB:A6:14:ED:B7:EC:52:DD:77:72:69"]
+        "sha256_cert_fingerprints": ["71:0A:A8:3F:44:F2:3A:61:8F:46:D0:68:A3:F9:8D:2B:4E:13:BA:7C:00:89:84:DA:12:FC:BD:09:E5:57:24:6C"]
       }
     }]
