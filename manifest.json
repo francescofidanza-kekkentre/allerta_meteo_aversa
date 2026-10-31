@@ -38,4 +38,13 @@
       "label": "Meteo e Allerte Aversa Desktop"
     }
   ]
+  "shortcuts": [
+  {
+    "name": "Allerte Meteo",
+    "short_name": "Allerte",
+    "description": "Controlla le allerte meteo in vigore ad Aversa",
+    "url": "./?action=alerts",
+    "icons": [{ "src": "./icon.png", "sizes": "192x192" }]
+  }
+]
 }
