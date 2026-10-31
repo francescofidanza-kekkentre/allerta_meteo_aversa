@@ -30,7 +30,7 @@
       <div class="flex justify-between items-center text-sm font-semibold text-slate-600">
         <span>Aversa (CE) · Protezione Civile</span>
         <button id="refreshBtn" onclick="loadAllData()" class="p-2 bg-slate-200/70 hover:bg-slate-300/70 rounded-full transition-colors text-slate-600" title="Ricarica dati">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg id="refresh-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
         </button>
@@ -252,6 +252,9 @@
     // 4. CARICAMENTO DATI (alert.json + Open-Meteo per 3 giorni)
     // -------------------------------------------------------------
     async function loadAllData() {
+       // 1. Trova l'icona e fai partire la rotazione
+          const icona = document.getElementById('refresh-icon');
+          if (icona) icona.classList.add('animate-spin'); 
       try {
         // Aggiungiamo un timestamp per bypassare forzatamente la cache
         const timestamp = new Date().getTime();
@@ -271,11 +274,13 @@
           const meteoData = await resMeteo.json();
           renderWeatherUI(meteoData);
         }
-      } catch (err) {
-        console.error('Errore durante il caricamento dei dati Open-Meteo:', err);
-      }
-    }
+     } catch (err) {
+    console.error('Errore durante il caricamento dei dati Open-Meteo:', err);
+  }
 
+  // 2. Ferma la rotazione a caricamento concluso o in caso di errore
+  if (icona) icona.classList.remove('animate-spin');
+}
     // -------------------------------------------------------------
     // 5. RENDERING BANNER ALLERTA
     // -------------------------------------------------------------
