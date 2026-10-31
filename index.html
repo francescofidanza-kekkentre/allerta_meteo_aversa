@@ -253,7 +253,9 @@
     // -------------------------------------------------------------
     async function loadAllData() {
       try {
-        const resAlert = await fetch('./alert.json', { cache: 'no-store' });
+        // Aggiungiamo un timestamp per bypassare forzatamente la cache
+        const timestamp = new Date().getTime();
+        const resAlert = await fetch('./alert.json?t=' + timestamp, { cache: 'no-store' });
         if (resAlert.ok) {
           const alertData = await resAlert.json();
           renderAlertUI(alertData);
