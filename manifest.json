@@ -39,12 +39,19 @@
     }
   ]
   "shortcuts": [
-  {
-    "name": "Allerte Meteo",
-    "short_name": "Allerte",
-    "description": "Controlla le allerte meteo in vigore ad Aversa",
-    "url": "./?action=alerts",
-    "icons": [{ "src": "./icon.png", "sizes": "192x192" }]
-  }
-]
+    {
+      "name": "Meteo & Allerta",
+      "short_name": "Allerta",
+      "description": "Controlla le allerte meteo e la situazione di oggi",
+      "url": "./index.html?view=today",
+      "icons": [{ "src": "./APPLE_ICON.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Previsioni 2 Giorni",
+      "short_name": "Previsioni",
+      "description": "Visualizza le previsioni orarie per i prossimi giorni",
+      "url": "./index.html?view=forecast",
+      "icons": [{ "src": "./APPLE_ICON.png", "sizes": "192x192" }]
+    }
+  ]
 }
