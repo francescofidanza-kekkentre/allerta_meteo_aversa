@@ -256,7 +256,7 @@
           const icona = document.getElementById('refresh-icon');
           if (icona) icona.classList.add('animate-spin'); 
       try {
-        // Aggiungiamo un timestamp per bypassare forzatamente la cache
+        // 2. Aggiungiamo un timestamp per bypassare forzatamente la cache
         const timestamp = new Date().getTime();
         const resAlert = await fetch('./alert.json?t=' + timestamp, { cache: 'no-store' });
         if (resAlert.ok) {
@@ -278,8 +278,10 @@
     console.error('Errore durante il caricamento dei dati Open-Meteo:', err);
   }
 
-  // 2. Ferma la rotazione a caricamento concluso o in caso di errore
-  if (icona) icona.classList.remove('animate-spin');
+      // 3. Ferma la rotazione dopo almeno mezzo secondo (750 millisecondi)
+      setTimeout(() => {
+        if (icona) icona.classList.remove('animate-spin');
+      }, 750);
 }
     // -------------------------------------------------------------
     // 5. RENDERING BANNER ALLERTA
