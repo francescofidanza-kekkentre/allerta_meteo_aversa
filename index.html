@@ -3,487 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aversa Meteo & Allerte</title>
+    <title>Allerta Meteo Aversa</title>
     
-    <!-- Link al manifest standard -->
+    <!-- PWA Manifest & Theme -->
     <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="./icon.png">
     
-    <!-- TAG SPECIFICI PER APPLE / IOS -->
-    <link rel="apple-touch-icon" href="./APPLE_ICON.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Aversa Meteo">
-    
-    <!-- Altri tuoi stili o script (es. Tailwind) -->
-      <script src="https://cdn.tailwindcss.com"></script>
-      <!-- Chart.js per il grafico delle temperature -->
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex justify-center items-start sm:py-6">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
 
-  <!-- Container App Mobile -->
-  <div class="w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100">
-    
-    <div class="p-5 space-y-4">
-      
-      <!-- Intestazione superiore -->
-      <div class="flex justify-between items-center text-sm font-semibold text-slate-600">
-        <span>Aversa (CE) · Protezione Civile</span>
-        <button id="refreshBtn" onclick="loadAllData()" class="p-2 bg-slate-200/70 hover:bg-slate-300/70 rounded-full transition-colors text-slate-600" title="Ricarica dati">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Tab Selettore 50/50 -->
-      <div class="bg-slate-200/60 p-1 rounded-2xl grid grid-cols-2 gap-1 font-medium text-xs">
-        <button id="tabToday" onclick="switchTab('today')" class="w-full py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-bold transition-all">
-          Meteo & Allerta
-        </button>
-        <button id="tabForecast" onclick="switchTab('forecast')" class="w-full py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all">
-          Prossimi 2ggg
-        </button>
-      </div>
-
-      <!-- CONTENITORE CON OVERLAY ASSOLUTO E COPERTURA OPACA BIANCA -->
-      <div class="relative">
-        
-        <!-- VISTA 1: OGGI & ALLERTA (Definisce l'altezza naturale del blocco) -->
-        <div id="viewToday" class="space-y-4">
-          
-          <!-- INTESTAZIONE SEZIONE ALLERTA -->
-          <div class="flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5 pt-1">
-            <span>ALLERTE IN VIGORE</span>
-            <span id="alertUpdatedAt" class="font-normal normal-case text-slate-400">--/--/----, --:--:--</span>
-          </div>
-
-          <!-- CARD ALLERTA METEO -->
-          <div id="alertCard" class="p-4 rounded-2xl border transition-all space-y-3 bg-emerald-50/80 border-emerald-300 text-emerald-950">
-            <div class="flex items-start gap-3">
-              <div id="alertIconContainer" class="p-1.5 bg-white rounded-xl shadow-xs flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
-                <span id="alertIcon" class="text-xl">✅</span>
-              </div>
-              <div class="space-y-1">
-                <h2 id="alertTitle" class="font-bold text-sm leading-snug">Nessuna Allerta Meteo in Vigore</h2>
-                <div>
-                  <span id="alertBadge" class="inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-200 text-emerald-800">Verde</span>
-                </div>
-              </div>
-            </div>
-
-            <p id="alertMessage" class="text-xs leading-relaxed opacity-90">
-              Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma per la Zona 1 (Piana Campana).
-            </p>
-
-            <div class="pt-2.5 border-t border-dashed border-emerald-300/80 flex items-center gap-2 text-xs font-bold text-emerald-900">
-              <span>🏫 Scuole ad Aversa:</span>
-              <span id="schoolStatus" class="font-black">APERTE</span>
-            </div>
-          </div>
-
-          <!-- CONDIZIONI METEO ATTUALI -->
-          <div class="text-center py-1 space-y-0.5">
-            <h1 class="text-xl font-bold text-slate-900">Aversa</h1>
-            <div id="currentTemp" class="text-6xl font-black tracking-tight text-slate-900">--°</div>
-            <div id="weatherDesc" class="text-sm font-medium text-slate-500">Aggiornamento meteo...</div>
-          </div>
-
-          <!-- GRIGLIA STATISTICHE (Vento, Pioggia, Umidità) -->
-          <div class="grid grid-cols-3 gap-2 text-center">
-            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-              <div class="text-[10px] text-slate-400 font-semibold uppercase">Vento</div>
-              <div id="windSpeed" class="text-xs font-bold text-slate-700 mt-1">-- km/h</div>
-            </div>
-            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-              <div class="text-[10px] text-slate-400 font-semibold uppercase">Pioggia Oggi</div>
-              <div id="rainToday" class="text-xs font-bold text-slate-700 mt-1">-- mm</div>
-            </div>
-            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-              <div class="text-[10px] text-slate-400 font-semibold uppercase">Umidità</div>
-              <div id="humidity" class="text-xs font-bold text-slate-700 mt-1">-- %</div>
-            </div>
-          </div>
-
-          <!-- GRAFICO TEMPERATURE h24H -->
-          <div class="space-y-2">
-            <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase">GRAFICO TEMPERATURE (h24H)</div>
-            <div class="h-36 w-full bg-slate-50 rounded-2xl p-2 border border-slate-100 relative">
-              <canvas id="tempChartCanvas"></canvas>
-            </div>
-          </div>
-
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md py-4 px-6">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wide">Meteo Aversa</h1>
+            <span id="update-time" class="text-xs bg-blue-700 px-2.5 py-1 rounded-full">Aggiornamento...</span>
         </div>
+    </header>
 
-        <!-- VISTA 2: PREVISIONI ORARIE PROSSIMI 2 GIORNI (Con bg-white z-10 per coprire perfettamente la vista sottostante) -->
-        <div id="viewForecast" class="absolute inset-0 bg-white z-10 flex flex-col space-y-3 hidden">
-          <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase shrink-0 pt-1">PREVISIONI ORARIE • PROSSIMI 2 GIORNI</div>
-          <div id="forecastContainer" class="flex-1 min-h-0 overflow-y-auto pr-1 space-y-1.5">
-            <!-- Popolato dinamicamente da JS -->
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- PIÈ DI PAGINA & PULSANTI -->
-    <div class="p-5 bg-slate-50 border-t border-slate-100 space-y-2 rounded-b-3xl">
-      <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener" class="w-full py-2.5 px-4 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors shadow-sm">
-        <span>🌐 Portale Protezione Civile Campania</span>
-      </a>
-
-      <button id="installBtn" class="hidden w-full py-2.5 px-4 bg-sky-600 text-white text-xs font-semibold rounded-2xl flex items-center justify-center gap-2 hover:bg-sky-700 transition-colors shadow-sm">
-        <span>📱 Installa come App su Mac / Smartphone</span>
-      </button>
-
-      <div class="text-center text-[10px] text-slate-400 pt-1">
-        Dati meteo: Open-Meteo · Allerte via Protezione Civile
-      </div>
-    </div>
-
-  </div>
-
-  <!-- SCRIPT LOGICA APPLICAZIONE -->
-  <script>
-    let tempChartInstance = null;
-    let deferredPrompt = null;
-
-    // -------------------------------------------------------------
-    // 1. PLUGIN CHART.JS: Linea verticale e pallino sull'intersezione della curva blu
-    // -------------------------------------------------------------
-    const currentTimeLinePlugin = {
-      id: 'currentTimeLine',
-      afterDraw: (chart) => {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-
-        const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data || !meta.data[currentHour]) return;
-
-        const currentPoint = meta.data[currentHour];
-        let xPixel = currentPoint.x;
-        let yPixel = currentPoint.y;
-
-        if (currentHour < 23 && meta.data[currentHour + 1]) {
-          const nextPoint = meta.data[currentHour + 1];
-          const minuteRatio = currentMinute / 60;
-          xPixel += (nextPoint.x - currentPoint.x) * minuteRatio;
-          yPixel += (nextPoint.y - currentPoint.y) * minuteRatio;
-        }
-
-        const yAxis = chart.scales.y;
-        const ctx = chart.ctx;
-
-        ctx.save();
-
-        ctx.beginPath();
-        ctx.setLineDash([4, 4]);
-        ctx.moveTo(xPixel, yAxis.top);
-        ctx.lineTo(xPixel, yAxis.bottom);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#ef4444';
-        ctx.stroke();
-
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.arc(xPixel, yPixel, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = '#ef4444';
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#ffffff';
-        ctx.stroke();
-
-        ctx.restore();
-      }
-    };
-
-    // -------------------------------------------------------------
-    // 2. MAPPATURA CODICI METEO WMO -> TESTO & ICONA
-    // -------------------------------------------------------------
-    function getWmoWeatherDetails(code) {
-      const map = {
-        0: { desc: 'Sereno', icon: '☀️' },
-        1: { desc: 'Quasi Sereno', icon: '🌤️' },
-        2: { desc: 'Poco Nuvoloso', icon: '⛅' },
-        3: { desc: 'Coperto', icon: '☁️' },
-        45: { desc: 'Nebbia', icon: '🌫️' },
-        48: { desc: 'Nebbia con brina', icon: '🌫️' },
-        51: { desc: 'Pioviggine leggera', icon: '🌦️' },
-        53: { desc: 'Pioviggine', icon: '🌦️' },
-        55: { desc: 'Pioviggine fitta', icon: '🌧️' },
-        61: { desc: 'Pioggia debole', icon: '🌧️' },
-        63: { desc: 'Pioggia', icon: '🌧️' },
-        65: { desc: 'Pioggia forte', icon: '🌧️' },
-        80: { desc: 'Rovesci', icon: '🌦️' },
-        81: { desc: 'Rovesci intensi', icon: '🌦️' },
-        95: { desc: 'Temporale', icon: '⛈️' }
-      };
-      return map[code] || { desc: 'Variabile', icon: '🌤️' };
-    }
-
-    // -------------------------------------------------------------
-    // 3. CAMBIO TAB (Meteo & Allerta / Prossimi 2gg)
-    // -------------------------------------------------------------
-    function switchTab(tab) {
-      const btnToday = document.getElementById('tabToday');
-      const btnForecast = document.getElementById('tabForecast');
-      const viewToday = document.getElementById('viewToday');
-      const viewForecast = document.getElementById('viewForecast');
-
-      const activeClasses = 'w-full py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-bold transition-all';
-      const inactiveClasses = 'w-full py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
-
-      if (tab === 'today') {
-        btnToday.className = activeClasses;
-        btnForecast.className = inactiveClasses;
-        viewToday.classList.remove('invisible', 'pointer-events-none');
-        viewForecast.classList.add('hidden');
-      } else {
-        btnForecast.className = activeClasses;
-        btnToday.className = inactiveClasses;
-        viewToday.classList.add('invisible', 'pointer-events-none');
-        viewForecast.classList.remove('hidden');
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 4. CARICAMENTO DATI (alert.json + Open-Meteo per 3 giorni)
-    // -------------------------------------------------------------
-    async function loadAllData() {
-      try {
-        const resAlert = await fetch('./alert.json', { cache: 'no-store' });
-        if (resAlert.ok) {
-          const alertData = await resAlert.json();
-          renderAlertUI(alertData);
-        }
-      } catch (err) {
-        console.error('Errore durante il caricamento di alert.json:', err);
-      }
-
-      try {
-        const urlMeteo = 'https://api.open-meteo.com/v1/forecast?latitude=40.973&longitude=14.206&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,rain_sum&timezone=Europe%2FRome&forecast_days=3';
-        const resMeteo = await fetch(urlMeteo, { cache: 'no-store' });
-        if (resMeteo.ok) {
-          const meteoData = await resMeteo.json();
-          renderWeatherUI(meteoData);
-        }
-      } catch (err) {
-        console.error('Errore durante il caricamento dei dati Open-Meteo:', err);
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 5. RENDERING BANNER ALLERTA
-    // -------------------------------------------------------------
-    function renderAlertUI(data) {
-      const card = document.getElementById('alertCard');
-      const title = document.getElementById('alertTitle');
-      const badge = document.getElementById('alertBadge');
-      const message = document.getElementById('alertMessage');
-      const icon = document.getElementById('alertIcon');
-      const updated = document.getElementById('alertUpdatedAt');
-      const schoolStatus = document.getElementById('schoolStatus');
-
-      updated.textContent = data.updated_at || '';
-      message.textContent = data.message || 'Nessun messaggio disponibile.';
-
-      if (data.schools_closed) {
-        schoolStatus.textContent = 'CHIUSE';
-        schoolStatus.className = 'font-black text-red-700';
-      } else {
-        schoolStatus.textContent = 'APERTE';
-        schoolStatus.className = 'font-black text-emerald-900';
-      }
-
-      const status = (data.status || 'VERDE').toUpperCase();
-      if (status === 'ROSSA') {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-red-50/80 border-red-300 text-red-950';
-        title.textContent = 'Allerta Meteo Rossa';
-        badge.textContent = 'Rossa';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-red-200 text-red-800';
-        icon.textContent = '🚨';
-      } else if (status === 'ARANCIONE') {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-orange-50/80 border-orange-300 text-orange-950';
-        title.textContent = 'Allerta Meteo Arancione';
-        badge.textContent = 'Arancione';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-200 text-orange-800';
-        icon.textContent = '📙';
-      } else if (status === 'GIALLA') {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-amber-50/80 border-amber-300 text-amber-950';
-        title.textContent = 'Allerta Meteo Gialla';
-        badge.textContent = 'Gialla';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-200 text-amber-800';
-        icon.textContent = '⚠️';
-      } else {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-emerald-50/80 border-emerald-300 text-emerald-950';
-        title.textContent = 'Nessuna Allerta Meteo in Vigore';
-        badge.textContent = 'Verde';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-200 text-emerald-800';
-        icon.textContent = '✅';
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 6. RENDERING METEO & GRAFICO TEMPERATURE
-    // -------------------------------------------------------------
-    function renderWeatherUI(data) {
-      const current = data.current;
-      const weatherInfo = getWmoWeatherDetails(current.weather_code);
-
-      document.getElementById('currentTemp').textContent = `${Math.round(current.temperature_2m)}°`;
-      document.getElementById('weatherDesc').textContent = weatherInfo.desc;
-      document.getElementById('windSpeed').textContent = `${Math.round(current.wind_speed_10m)} km/h`;
-      document.getElementById('humidity').textContent = `${current.relative_humidity_2m} %`;
-      
-      const rainToday = data.daily?.rain_sum?.[0] ?? 0;
-      document.getElementById('rainToday').textContent = `${rainToday} mm`;
-
-      // Grafico prime 24 ore (Oggi)
-      const hourlyTemps = data.hourly.temperature_2m.slice(0, 24);
-      const hoursLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-
-      const ctx = document.getElementById('tempChartCanvas').getContext('2d');
-      if (tempChartInstance) {
-        tempChartInstance.destroy();
-      }
-
-      tempChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: hoursLabels,
-          datasets: [{
-            label: 'Temperatura (°C)',
-            data: hourlyTemps,
-            borderColor: '#0284c7',
-            backgroundColor: 'rgba(2, 132, 199, 0.08)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 1,
-            pointHoverRadius: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { font: { size: 9 }, maxRotation: 0 }
-            },
-            y: {
-              grid: { color: '#f1f5f9' },
-              ticks: { font: { size: 9 } }
-            }
-          }
-        },
-        plugins: [currentTimeLinePlugin]
-      });
-
-      // Rendering Lista Oraria verticale
-      renderForecastList(data.hourly);
-    }
-
-    // -------------------------------------------------------------
-    // 7. RENDERING LISTA ORARIA VERTICALE
-    // -------------------------------------------------------------
-    function renderForecastList(hourly) {
-      const container = document.getElementById('forecastContainer');
-      container.innerHTML = '';
-
-      if (!hourly || !hourly.time) return;
-
-      const now = new Date();
-      
-      let startIndex = 0;
-      for (let i = 0; i < hourly.time.length; i++) {
-        const itemDate = new Date(hourly.time[i]);
-        if (itemDate >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours())) {
-          startIndex = i;
-          break;
-        }
-      }
-
-      const totalHoursToShow = 36;
-      const endIndex = Math.min(hourly.time.length, startIndex + totalHoursToShow);
-
-      let currentDayGroup = '';
-
-      for (let i = startIndex; i < endIndex; i++) {
-        const timeStr = hourly.time[i];
-        const dateObj = new Date(timeStr);
-
-        const dayName = dateObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
-        const hourStr = dateObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-
-        const code = hourly.weather_code[i];
-        const info = getWmoWeatherDetails(code);
-        const temp = Math.round(hourly.temperature_2m[i]);
-        const pop = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
-
-        if (dayName !== currentDayGroup) {
-          currentDayGroup = dayName;
-
-          const dayHeader = document.createElement('div');
-          dayHeader.className = 'bg-sky-50 text-sky-700 font-bold px-3 py-2 rounded-xl text-xs uppercase tracking-wide mt-3 mb-1.5';
-          dayHeader.textContent = dayName;
-          container.appendChild(dayHeader);
-        }
-
-        const row = document.createElement('div');
-        row.className = 'bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between text-xs mb-1.5 shadow-2xs';
-        row.innerHTML = `
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-slate-800 w-11">${hourStr}</span>
-            <div class="flex items-center gap-2">
-              <span class="text-base">${info.icon}</span>
-              <span class="font-medium text-slate-600">${info.desc}</span>
+    <!-- Main Content -->
+    <main class="max-w-md mx-auto p-4 w-full flex-grow flex flex-col justify-center">
+        <div id="alert-card" class="bg-white rounded-2xl shadow-lg p-6 border-l-8 border-blue-500 transition-all duration-300">
+            <div class="flex items-center space-x-3 mb-3">
+                <div id="status-icon" class="text-3xl">📡</div>
+                <h2 id="alert-title" class="text-lg font-semibold text-slate-900">Controllo bollettino in corso...</h2>
             </div>
-          </div>
-          <div class="flex items-center gap-3">
-            ${pop > 0 ? `<span class="text-sky-600 font-semibold text-[11px] flex items-center gap-0.5">💧 ${pop}%</span>` : ''}
-            <span class="font-bold text-slate-800 text-sm">${temp}°</span>
-          </div>
-        `;
-        container.appendChild(row);
-      }
-    }
+            <p id="alert-desc" class="text-slate-600 text-sm leading-relaxed">Sto scaricando gli ultimi dati ufficiali per la zona di Aversa.</p>
+        </div>
+    </main>
 
-    // -------------------------------------------------------------
-    // 8. REGISTRAZIONE SERVICE WORKER & PROMPT INSTALLAZIONE PWA
-    // -------------------------------------------------------------
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('Service Worker registrato con successo.'))
-          .catch(err => console.error('Errore registrazione Service Worker:', err));
-      });
-    }
+    <!-- Footer -->
+    <footer class="text-center py-4 text-xs text-slate-400">
+        Allerta Meteo Aversa &bull; PWA & TWA Ready
+    </footer>
 
-    const installBtn = document.getElementById('installBtn');
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.classList.remove('hidden');
-    });
-
-    installBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          installBtn.classList.add('hidden');
+    <!-- Service Worker & Dynamic Fetch Script -->
+    <script>
+        // Registrazione Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registrato con successo:', reg.scope))
+                    .catch(err => console.error('Errore registrazione Service Worker:', err));
+            });
         }
-        deferredPrompt = null;
-      }
-    });
 
-    // Avvio al caricamento della pagina
-    loadAllData();
-  </script>
+        // Funzione per caricare i dati meteo evitando la cache (Anti-Cache Timestamp)
+        function loadWeatherData() {
+            const timestamp = new Date().getTime();
+            fetch('./alert.json?t=' + timestamp)
+                .then(response => {
+                    if (!response.ok) throw new Error('Errore nel recupero dati');
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('alert-title').innerText = data.title || "Nessuna allerta attiva";
+                    document.getElementById('alert-desc').innerText = data.description || "Il comune di Aversa non registra criticità al momento.";
+                    document.getElementById('update-time').innerText = data.time || "Aggiornato adesso";
+                    
+                    const card = document.getElementById('alert-card');
+                    if (data.level === 'red') {
+                        card.className = "bg-white rounded-2xl shadow-lg p-6 border-l-8 border-red-600 transition-all duration-300";
+                    } else if (data.level === 'orange' || data.level === 'yellow') {
+                        card.className = "bg-white rounded-2xl shadow-lg p-6 border-l-8 border-amber-500 transition-all duration-300";
+                    } else {
+                        card.className = "bg-white rounded-2xl shadow-lg p-6 border-l-8 border-emerald-500 transition-all duration-300";
+                    }
+                })
+                .catch(error => {
+                    console.error('Impossibile aggiornare i dati:', error);
+                    document.getElementById('alert-title').innerText = "Modalità Offline / Connessione lenta";
+                    document.getElementById('alert-desc').innerText = "Impossibile recuperare l'ultimo bollettino. Mostro i dati salvati in cache.";
+                });
+        }
+
+        // Esegui al caricamento della pagina
+        loadWeatherData();
+    </script>
 </body>
 </html>
