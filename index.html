@@ -484,8 +484,19 @@
       }
     });
 
-    // Avvio al caricamento della pagina
+    // Avvio al caricamento della pagina e gestione App Shortcuts
     loadAllData();
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedView = urlParams.get('view');
+      
+      if (requestedView === 'forecast') {
+        switchTab('forecast');
+      } else {
+        switchTab('today');
+      }
+    });
   </script>
 </body>
 </html>
