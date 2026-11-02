@@ -20,7 +20,6 @@ def get_campania_alert_status():
         " per la Zona 1 (Piana Campana)."
     )
 
-    # L'API diretta e nascosta del Centro Funzionale che restituisce il JSON puro
     api_url = "https://centrofunzionale.regione.campania.it/CentroFunzionalePortaleRest/rest/bollettinometeo/findLastBollettinoInserito/"
 
     try:
@@ -28,11 +27,8 @@ def get_campania_alert_status():
 
         if response.status_code == 200:
             dati = response.json()
-            
-            # Scorriamo la lista delle zone per trovare la Zona 1 (Aversa)
             for area in dati.get("bollettinoMeteoBindList", []):
                 if area.get("zona") == 1:
-                    # Leggiamo la descrizione (es: "Livello di allerta... verde/giallo")
                     descrizione = area.get("livelloDesc", "").upper()
                     
                     if "ROSS" in descrizione:
@@ -44,20 +40,67 @@ def get_campania_alert_status():
                     else:
                         status = "VERDE"
                     
-                    # Aggiorniamo il messaggio da mostrare nell'app
                     if status != "VERDE":
                         raw_message = (
                             f"Allerta meteo {status} confermata dal bollettino del "
                             f"Centro Funzionale Multirischi Campania per la Zona 1."
                         )
                     
-                    print(f"✅ Dati API letti con successo! Stato Zona 1: {status}")
-                    break # Zona 1 trovata, possiamo fermare il ciclo
+                    print(f"✅ Stato allerta Zona 1: {status}")
+                    break
 
     except Exception as e:
-        print(f"⚠️ Errore durante l'interrogazione dell'API: {e}")
+        print(f"⚠️ Errore durante l'interrogazione dell'API allerte: {e}")
 
     return status, raw_message
+
+
+def get_campania_weather_forecast():
+    """Estrae le previsioni meteo dettagliate e le icone per la Zona 1."""
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
+
+    meteo_url = "https://centrofunzionale.regione.campania.it/CentroFunzionalePortaleRest/rest/bollettinometeo/findLastMeteo/"
+    
+    forecast_data = {
+        "general_desc": "Previsioni meteo in aggiornamento.",
+        "today_forecast": "Nessun dettaglio disponibile.",
+        "icon_cielo": "",
+        "icon_vento": ""
+    }
+
+    try:
+        response = requests.get(meteo_url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            dati = response.json()
+            forecast_data["general_desc"] = dati.get("esameSinottico", "")
+            
+            # Prendi il primo giorno disponibile (oggi)
+            giorni = dati.get("previsionePerGiornoList", [])
+            if giorni:
+                oggi = giorni[0]
+                # Cerca la previsione testuale per la Zona 1
+                for zona_info in oggi.get("meteoPerZona", []):
+                    if zona_info.get("zona") == 1:
+                        forecast_data["today_forecast"] = zona_info.get("previsione", "")
+                        break
+                
+                # Cerca le icone mappa per la Zona 1
+                for mappa in oggi.get("meteoMappa", []):
+                    if mappa.get("idZona") == 1:
+                        forecast_data["icon_cielo"] = mappa.get("mattinaCielo", "")
+                        forecast_data["icon_vento"] = mappa.get("mattinaVento", "")
+                        break
+                        
+            print("✅ Previsioni meteo dettagliate estratte con successo!")
+    except Exception as e:
+        print(f"⚠️ Errore durante il recupero delle previsioni meteo: {e}")
+
+    return forecast_data
 
 
 def check_aversa_school_status():
@@ -97,10 +140,12 @@ def clean_weather_message(raw_message):
 
 
 def fetch_and_update_alert():
-    print("Avvio aggiornamento dati meteo e scuole...")
+    print("Avvio aggiornamento dati meteo, allerte e scuole...")
 
     status, raw_message = get_campania_alert_status()
-    print(f"📡 STATO FINALE ELABORATO: {status}")
+    weather_info = get_campania_weather_forecast()
+    
+    print(f"📡 STATO FINALE ALLERTA: {status}")
 
     schools_closed = False
     if status != "VERDE":
@@ -108,9 +153,14 @@ def fetch_and_update_alert():
 
     message = clean_weather_message(raw_message)
 
+    # Costruiamo un file JSON ricco di informazioni per la PWA
     alert_data = {
         "status": status,
         "message": message,
+        "weather_summary": weather_info["today_forecast"],
+        "synopsis": weather_info["general_desc"],
+        "icon_cielo": f"https://centrofunzionale.regione.campania.it/{weather_info['icon_cielo']}" if weather_info['icon_cielo'] else "",
+        "icon_vento": f"https://centrofunzionale.regione.campania.it/{weather_info['icon_vento']}" if weather_info['icon_vento'] else "",
         "schools_closed": schools_closed,
         "updated_at": datetime.now(ZoneInfo("Europe/Rome")).strftime(
             "%d/%m/%Y, %H:%M:%S"
@@ -120,7 +170,7 @@ def fetch_and_update_alert():
     try:
         with open("alert.json", "w", encoding="utf-8") as f:
             json.dump(alert_data, f, ensure_ascii=False, indent=2)
-        print("✅ File alert.json generato con successo!")
+        print("✅ File alert.json generato con tutte le previsioni dettagliate!")
     except Exception as e:
         print(f"❌ Errore durante il salvataggio di alert.json: {e}")
 
