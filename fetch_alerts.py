@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import json
 import re
 from zoneinfo import ZoneInfo
@@ -6,7 +7,8 @@ from bs4 import BeautifulSoup
 import requests
 
 def get_campania_alert_status():
-    """Rileva l'allerta meteo leggendo direttamente la dashboard del Centro Funzionale Multirischi Campania."""
+    """Rileva l'allerta meteo dai comunicati ufficiali (Google News RSS).
+    Utilizza una memoria di 24 ore ma si resetta istantaneamente in caso di revoca."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -20,56 +22,58 @@ def get_campania_alert_status():
         " per la Zona 1 (Piana Campana)."
     )
 
-    # Interroghiamo direttamente la dashboard ufficiale del Centro Funzionale
-    url = "https://centrofunzionale.regione.campania.it/"
+    # Finestra di ricerca portata a 24h per coprire l'intero ciclo vitale di un bollettino
+    rss_url = "https://news.google.com/rss/search?q=site:regione.campania.it+%22allerta+meteo%22+when:24h&hl=it&gl=IT&ceid=IT:it"
 
     try:
-        response = requests.get(url, headers=headers, timeout=15)
-        
+        response = requests.get(rss_url, headers=headers, timeout=10)
+
         if response.status_code == 200:
-            soup = BeautifulSoup(response.content, "html.parser")
-            
-            # Estraiamo tutto il testo della pagina mettendolo in maiuscolo per facilitare la ricerca
-            text = soup.get_text(separator=" ", strip=True).upper()
-            
-            # Cerchiamo i blocchi "Stato di Allerta ATTUALE" e "PREVISTO" tramite regex
-            match_attuale = re.search(r"STATO DI ALLERTA ATTUALE.*?LIVELLO DI ALLERTA.*?(ROSSA|ARANCIONE|GIALLA|VERDE)", text)
-            match_previsto = re.search(r"STATO DI ALLERTA PREVISTO.*?LIVELLO DI ALLERTA.*?(ROSSA|ARANCIONE|GIALLA|VERDE)", text)
-            
-            # Fallback nel caso in cui cambino l'impaginazione ma lascino la dicitura generica
-            match_generico = re.search(r"LIVELLO DI ALLERTA.*?IDROGEOLOGICA.*?(ROSSA|ARANCIONE|GIALLA|VERDE)", text)
-            
-            colori_trovati = []
-            
-            if match_attuale:
-                colori_trovati.append(match_attuale.group(1))
-                print(f"  🔍 Stato ATTUALE letto dalla dashboard: {match_attuale.group(1)}")
-                
-            if match_previsto:
-                colori_trovati.append(match_previsto.group(1))
-                print(f"  🔍 Stato PREVISTO letto dalla dashboard: {match_previsto.group(1)}")
-                
-            if not colori_trovati and match_generico:
-                colori_trovati.append(match_generico.group(1))
-                print(f"  🔍 Stato GENERICO letto dalla dashboard: {match_generico.group(1)}")
+            soup = BeautifulSoup(response.content, "xml")
+            items = soup.find_all("item")
+            now_utc = datetime.now(timezone.utc)
 
-            # Determina la gravità massima tra l'allerta in corso e quella prevista
-            if "ROSSA" in colori_trovati:
-                status = "ROSSA"
-            elif "ARANCIONE" in colori_trovati:
-                status = "ARANCIONE"
-            elif "GIALLA" in colori_trovati:
-                status = "GIALLA"
+            print(f"🔍 Articoli trovati da Protezione Civile nelle ultime 24h: {len(items)}")
 
-            # Se trova un'allerta, aggiorna il messaggio da mostrare nell'app
-            if status != "VERDE":
-                raw_message = (
-                    f"Allerta meteo {status} confermata dal Centro Funzionale Multirischi "
-                    "della Regione Campania."
-                )
+            for item in items:
+                title = item.title.text.lower()
+                pub_date_str = item.pubDate.text if item.pubDate else None
+                print(f"  📰 Titolo: {item.title.text} | Data: {pub_date_str}")
+
+                # Filtro orario: scarta solo se più vecchio di 24 ore
+                if pub_date_str:
+                    try:
+                        pub_dt = parsedate_to_datetime(pub_date_str)
+                        age_hours = (now_utc - pub_dt).total_seconds() / 3600
+                        if age_hours > 24 and "prorog" not in title:
+                            print(f"  ⏳ Scartato perché troppo vecchio ({age_hours:.1f} ore fa).")
+                            continue
+                    except Exception as e:
+                        print(f"  ⚠️ Errore parsing data: {e}")
+
+                # Rileva comunicati di revoca o fine allerta
+                if any(w in title for w in ["revocat", "termina", "scade", "fine", "cessat", "verde", "rientr", "scadut"]):
+                    print("  ✅ Trovato avviso di fine o revoca dell'allerta. Ritorno a VERDE.")
+                    status = "VERDE"
+                    raw_message = "Allerta meteo terminata o revocata. Condizioni nella norma per la Zona 1."
+                    break
+
+                # Rileva il colore dell'allerta
+                if "rossa" in title:
+                    status = "ROSSA"
+                    raw_message = "Allerta meteo ROSSA diramata dalla Protezione Civile Campania per la Zona 1 (Piana Campana)."
+                    break
+                elif "arancione" in title:
+                    status = "ARANCIONE"
+                    raw_message = "Allerta meteo ARANCIONE diramata dalla Protezione Civile Campania per la Zona 1 (Piana Campana)."
+                    break
+                elif "gialla" in title:
+                    status = "GIALLA"
+                    raw_message = "Allerta meteo GIALLA diramata dalla Protezione Civile Campania per la Zona 1 (Piana Campana)."
+                    break
 
     except Exception as e:
-        print(f"⚠️ Errore durante la consultazione del Centro Funzionale: {e}")
+        print(f"⚠️ Errore durante la consultazione RSS: {e}")
 
     return status, raw_message
 
