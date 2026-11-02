@@ -83,48 +83,40 @@
             </div>
           </div>
 
-          <!-- 🌟 NUOVO BLOCCO: PREVISIONI DETTAGLIATE E TEMPERATURE APERTE (Open-Meteo) -->
+          <!-- RIQUADRO BLU (SINTESI METEO AVERSA) - VENTO & PIOGGIA -->
           <div class="bg-sky-50/80 border border-sky-200 rounded-2xl p-3.5 space-y-2 text-sky-950">
             <div class="flex justify-between items-center text-[11px] font-bold text-sky-700 uppercase tracking-wider">
               <span>Sintesi Meteo Aversa</span>
               <span id="weatherSummaryDesc" class="font-medium text-sky-800 normal-case">--</span>
             </div>
-            <div class="grid grid-cols-3 gap-2 text-center pt-1">
-              <div class="bg-white/80 p-2 rounded-xl border border-sky-100">
-                <div class="text-[10px] text-sky-500 font-bold uppercase">Temperatura</div>
-                <div id="boxTemp" class="text-sm font-black text-sky-900 mt-0.5">--°C</div>
-              </div>
-              <div class="bg-white/80 p-2 rounded-xl border border-sky-100">
-                <div class="text-[10px] text-sky-500 font-bold uppercase">Min / Max</div>
-                <div class="text-xs font-bold text-sky-900 mt-0.5"><span id="boxMinTemp">--</span>° / <span id="boxMaxTemp">--</span>°</div>
-              </div>
-              <div class="bg-white/80 p-2 rounded-xl border border-sky-100">
+            <div class="grid grid-cols-2 gap-2 text-center pt-1">
+              <div class="bg-white/80 p-2.5 rounded-xl border border-sky-100">
                 <div class="text-[10px] text-sky-500 font-bold uppercase">Vento</div>
-                <div id="boxWind" class="text-xs font-bold text-sky-900 mt-0.5">-- km/h</div>
+                <div id="blueWind" class="text-sm font-black text-sky-900 mt-0.5">-- km/h</div>
+              </div>
+              <div class="bg-white/80 p-2.5 rounded-xl border border-sky-100">
+                <div class="text-[10px] text-sky-500 font-bold uppercase">Pioggia Oggi</div>
+                <div id="blueRain" class="text-sm font-black text-sky-900 mt-0.5">-- mm</div>
               </div>
             </div>
           </div>
 
-          <!-- CONDIZIONI METEO ATTUALI PRINCIPALI -->
+          <!-- VALORE GRANDE AL CENTRO CON TEMPERATURA PRECISA (DECIMALE) -->
           <div class="text-center py-1 space-y-0.5">
             <h1 class="text-xl font-bold text-slate-900">Aversa</h1>
             <div id="currentTemp" class="text-6xl font-black tracking-tight text-slate-900">--°</div>
             <div id="weatherDesc" class="text-sm font-medium text-slate-500">Aggiornamento meteo...</div>
           </div>
 
-          <!-- GRIGLIA STATISTICHE (Vento, Pioggia, Umidità) -->
-          <div class="grid grid-cols-3 gap-2 text-center">
-            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-              <div class="text-[10px] text-slate-400 font-semibold uppercase">Vento</div>
-              <div id="windSpeed" class="text-xs font-bold text-slate-700 mt-1">-- km/h</div>
-            </div>
-            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-              <div class="text-[10px] text-slate-400 font-semibold uppercase">Pioggia Oggi</div>
-              <div id="rainToday" class="text-xs font-bold text-slate-700 mt-1">-- mm</div>
-            </div>
+          <!-- GRIGLIA STATISTICHE IN BASSO (Umidità e Min/Max) -->
+          <div class="grid grid-cols-2 gap-2 text-center">
             <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
               <div class="text-[10px] text-slate-400 font-semibold uppercase">Umidità</div>
-              <div id="humidity" class="text-xs font-bold text-slate-700 mt-1">-- %</div>
+              <div id="bottomHumidity" class="text-xs font-bold text-slate-700 mt-1">-- %</div>
+            </div>
+            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+              <div class="text-[10px] text-slate-400 font-semibold uppercase">Min / Max</div>
+              <div id="bottomMinMax" class="text-xs font-bold text-slate-700 mt-1">--° / --°</div>
             </div>
           </div>
 
@@ -298,7 +290,7 @@
     }
 
     // -------------------------------------------------------------
-    // 5. RENDERING BANNER ALLERTA E DATI AGGIUNTIVI DAL JSON
+    // 5. RENDERING BANNER ALLERTA
     // -------------------------------------------------------------
     function renderAlertUI(data) {
       const card = document.getElementById('alertCard');
@@ -318,23 +310,6 @@
       } else {
         schoolStatus.textContent = 'APERTE';
         schoolStatus.className = 'font-black text-emerald-900';
-      }
-
-      // Popola i campi aggiuntivi del meteo salvati da Open-Meteo nel backend Python se presenti
-      if (data.weather_summary) {
-        document.getElementById('weatherSummaryDesc').textContent = data.weather_summary;
-      }
-      if (data.temperature !== undefined && data.temperature !== null) {
-        document.getElementById('boxTemp').textContent = `${data.temperature}°C`;
-      }
-      if (data.temp_min !== undefined && data.temp_min !== null) {
-        document.getElementById('boxMinTemp').textContent = data.temp_min;
-      }
-      if (data.temp_max !== undefined && data.temp_max !== null) {
-        document.getElementById('boxMaxTemp').textContent = data.temp_max;
-      }
-      if (data.wind_speed !== undefined && data.wind_speed !== null) {
-        document.getElementById('boxWind').textContent = `${data.wind_speed} km/h`;
       }
 
       const status = (data.status || 'VERDE').toUpperCase();
@@ -370,15 +345,30 @@
     // -------------------------------------------------------------
     function renderWeatherUI(data) {
       const current = data.current;
+      const daily = data.daily;
       const weatherInfo = getWmoWeatherDetails(current.weather_code);
 
-      document.getElementById('currentTemp').textContent = `${Math.round(current.temperature_2m)}°`;
+      // 1. Valore grande al centro con la temperatura precisa (decimale, es. 14.7°)
+      document.getElementById('currentTemp').textContent = `${current.temperature_2m.toFixed(1)}°`;
       document.getElementById('weatherDesc').textContent = weatherInfo.desc;
-      document.getElementById('windSpeed').textContent = `${Math.round(current.wind_speed_10m)} km/h`;
-      document.getElementById('humidity').textContent = `${current.relative_humidity_2m} %`;
+      if (document.getElementById('weatherSummaryDesc')) {
+        document.getElementById('weatherSummaryDesc').textContent = weatherInfo.desc;
+      }
+
+      // 2 & 3. Riquadro blu: Vento e Pioggia
+      const windSpeedVal = Math.round(current.wind_speed_10m);
+      const rainTodayVal = daily?.rain_sum?.[0] ?? 0;
       
-      const rainToday = data.daily?.rain_sum?.[0] ?? 0;
-      document.getElementById('rainToday').textContent = `${rainToday} mm`;
+      document.getElementById('blueWind').textContent = `${windSpeedVal} km/h`;
+      document.getElementById('blueRain').textContent = `${rainTodayVal} mm`;
+
+      // Griglia in basso: Umidità e Min/Max
+      const humidityVal = current.relative_humidity_2m;
+      const minTemp = daily?.temperature_2m_min?.[0] !== undefined ? Math.round(daily.temperature_2m_min[0]) : '--';
+      const maxTemp = daily?.temperature_2m_max?.[0] !== undefined ? Math.round(daily.temperature_2m_max[0]) : '--';
+
+      document.getElementById('bottomHumidity').textContent = `${humidityVal} %`;
+      document.getElementById('bottomMinMax').textContent = `${minTemp}° / ${maxTemp}°`;
 
       // Grafico prime 24 ore (Oggi)
       const hourlyTemps = data.hourly.temperature_2m.slice(0, 24);
