@@ -120,11 +120,22 @@
             </div>
           </div>
 
-          <!-- GRAFICO TEMPERATURE 24H -->
+          <!-- GRAFICO TEMPERATURE 24H CON SLIDER INTERATTIVO -->
           <div class="space-y-2">
-            <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase">EVOLUZIONE TEMPERATURE (24H)</div>
-            <div class="h-36 w-full bg-slate-50 rounded-2xl p-2 border border-slate-100 relative">
+            <div class="flex justify-between items-center text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+              <span>EVOLUZIONE TEMPERATURE (24H)</span>
+              <span id="chartInstruction" class="text-[10px] text-sky-600 font-normal normal-case">Trascina o scorri</span>
+            </div>
+            <div class="h-32 w-full bg-slate-50 rounded-2xl p-2 border border-slate-100 relative">
               <canvas id="tempChartCanvas"></canvas>
+            </div>
+            <!-- Slider orario fluido per muovere la barra rossa -->
+            <div class="px-1 pt-1">
+              <input type="range" id="hourSlider" min="0" max="23" step="1" value="0" 
+                     class="w-full accent-red-500 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                     oninput="onSliderMove(this.value)" 
+                     onmouseup="onSliderRelease()" 
+                     ontouchend="onSliderRelease()">
             </div>
           </div>
 
@@ -163,36 +174,51 @@
   <script>
     let tempChartInstance = null;
     let deferredPrompt = null;
+    let selectedHour = null; // null = orario corrente
 
     // -------------------------------------------------------------
-    // 1. PLUGIN CHART.JS: Linea verticale e pallino sull'intersezione della curva blu
+    // 1. PLUGIN CHART.JS: Linea verticale, pallino e tooltip temperatura
     // -------------------------------------------------------------
     const currentTimeLinePlugin = {
       id: 'currentTimeLine',
       afterDraw: (chart) => {
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-
         const meta = chart.getDatasetMeta(0);
-        if (!meta || !meta.data || !meta.data[currentHour]) return;
-
-        const currentPoint = meta.data[currentHour];
-        let xPixel = currentPoint.x;
-        let yPixel = currentPoint.y;
-
-        if (currentHour < 23 && meta.data[currentHour + 1]) {
-          const nextPoint = meta.data[currentHour + 1];
-          const minuteRatio = currentMinute / 60;
-          xPixel += (nextPoint.x - currentPoint.x) * minuteRatio;
-          yPixel += (nextPoint.y - currentPoint.y) * minuteRatio;
-        }
+        if (!meta || !meta.data || meta.data.length === 0) return;
 
         const yAxis = chart.scales.y;
         const ctx = chart.ctx;
 
+        let xPixel, yPixel, tempVal, displayLabel;
+
+        if (selectedHour !== null) {
+          const idx = Math.min(Math.max(0, Math.round(selectedHour)), meta.data.length - 1);
+          const point = meta.data[idx];
+          xPixel = point.x;
+          yPixel = point.y;
+          tempVal = chart.data.datasets[0].data[idx];
+          displayLabel = chart.data.labels[idx];
+        } else {
+          const now = new Date();
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
+          if (!meta.data[currentHour]) return;
+
+          const currentPoint = meta.data[currentHour];
+          xPixel = currentPoint.x;
+          yPixel = currentPoint.y;
+          tempVal = chart.data.datasets[0].data[currentHour];
+
+          if (currentHour < 23 && meta.data[currentHour + 1]) {
+            const nextPoint = meta.data[currentHour + 1];
+            const minuteRatio = currentMinute / 60;
+            xPixel += (nextPoint.x - currentPoint.x) * minuteRatio;
+            yPixel += (nextPoint.y - currentPoint.y) * minuteRatio;
+          }
+        }
+
         ctx.save();
 
+        // Linea tratteggiata verticale
         ctx.beginPath();
         ctx.setLineDash([4, 4]);
         ctx.moveTo(xPixel, yAxis.top);
@@ -201,18 +227,66 @@
         ctx.strokeStyle = '#ef4444';
         ctx.stroke();
 
+        // Pallino rosso
         ctx.setLineDash([]);
         ctx.beginPath();
-        ctx.arc(xPixel, yPixel, 5, 0, 2 * Math.PI);
+        ctx.arc(xPixel, yPixel, 6, 0, 2 * Math.PI);
         ctx.fillStyle = '#ef4444';
         ctx.fill();
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#ffffff';
         ctx.stroke();
 
+        // Se l'utente sta muovendo lo slider, mostra il riquadro con la temperatura puntuale
+        if (selectedHour !== null && tempVal !== undefined) {
+          const text = `${displayLabel} - ${tempVal.toFixed(1)}°C`;
+          ctx.font = 'bold 11px sans-serif';
+          const textWidth = ctx.measureText(text).width;
+          
+          const padding = 6;
+          const boxWidth = textWidth + padding * 2;
+          const boxHeight = 22;
+          const boxX = Math.min(Math.max(4, xPixel - boxWidth / 2), chart.width - boxWidth - 4);
+          const boxY = Math.max(4, yPixel - boxHeight - 14);
+
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+          ctx.shadowBlur = 6;
+          ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+          ctx.shadowBlur = 0;
+
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+          ctx.fillStyle = '#0f172a';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, boxX + boxWidth / 2, boxY + boxHeight / 2);
+        }
+
         ctx.restore();
       }
     };
+
+    // Gestione dello slider orario
+    function onSliderMove(val) {
+      selectedHour = parseInt(val, 10);
+      if (tempChartInstance) {
+        tempChartInstance.draw();
+      }
+    }
+
+    function onSliderRelease() {
+      selectedHour = null; // Ritorna all'orario corrente e nasconde il valore puntuale
+      if (tempChartInstance) {
+        tempChartInstance.draw();
+      }
+      // Sincronizza lo slider con l'ora attuale
+      const now = new Date();
+      const slider = document.getElementById('hourSlider');
+      if (slider) slider.value = now.getHours();
+    }
 
     // -------------------------------------------------------------
     // 2. MAPPATURA CODICI METEO WMO -> TESTO & ICONA
@@ -348,14 +422,14 @@
       const daily = data.daily;
       const weatherInfo = getWmoWeatherDetails(current.weather_code);
 
-      // 1. Valore grande al centro con °C
+      // Valore grande al centro con °C
       document.getElementById('currentTemp').textContent = `${current.temperature_2m.toFixed(1)}°C`;
       document.getElementById('weatherDesc').textContent = weatherInfo.desc;
       if (document.getElementById('weatherSummaryDesc')) {
         document.getElementById('weatherSummaryDesc').textContent = weatherInfo.desc;
       }
 
-      // 2 & 3. Riquadro blu: Vento e Pioggia
+      // Riquadro blu: Vento e Pioggia
       const windSpeedVal = Math.round(current.wind_speed_10m);
       const rainTodayVal = daily?.rain_sum?.[0] ?? 0;
       
@@ -369,6 +443,11 @@
 
       document.getElementById('bottomHumidity').textContent = `${humidityVal} %`;
       document.getElementById('bottomMinMax').textContent = `${minTemp}° / ${maxTemp}°`;
+
+      // Imposta lo slider sull'ora corrente all'avvio
+      const now = new Date();
+      const slider = document.getElementById('hourSlider');
+      if (slider) slider.value = now.getHours();
 
       // Grafico prime 24 ore (Oggi)
       const hourlyTemps = data.hourly.temperature_2m.slice(0, 24);
