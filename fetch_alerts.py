@@ -56,7 +56,7 @@ def get_campania_alert_status():
 
 
 def get_campania_weather_forecast():
-    """Estrae le previsioni meteo dettagliate e le icone per la Zona 1."""
+    """Estrae le previsioni meteo dettagliate e le icone per la Zona 1 (versione di debug)."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -75,30 +75,33 @@ def get_campania_weather_forecast():
 
     try:
         response = requests.get(meteo_url, headers=headers, timeout=10)
+        print(f"📡 Status Code API Meteo: {response.status_code}")
+        
         if response.status_code == 200:
             dati = response.json()
+            # Stampa le chiavi principali ricevute per capire la struttura
+            print(f"🔑 Chiavi JSON ricevute: {list(dati.keys()) if isinstance(dati, dict)	is not None else 'Non è un dizionario'}")
+            
             forecast_data["general_desc"] = dati.get("esameSinottico", "")
             
-            # Chiave corretta con la 'i' (previsioniPerGiornoList)
             giorni = dati.get("previsioniPerGiornoList", [])
+            print(f"📅 Giorni trovati nella lista: {len(giorni)}")
+            
             if giorni:
                 oggi = giorni[0]
-                # Cerca la previsione testuale per la Zona 1
                 for zona_info in oggi.get("meteoPerZona", []):
                     if zona_info.get("zona") == 1:
                         forecast_data["today_forecast"] = zona_info.get("previsione", "")
                         break
                 
-                # Cerca le icone mappa per la Zona 1
                 for mappa in oggi.get("meteoMappa", []):
                     if mappa.get("idZona") == 1:
                         forecast_data["icon_cielo"] = mappa.get("mattinaCielo", "")
                         forecast_data["icon_vento"] = mappa.get("mattinaVento", "")
                         break
-                        
-            print("✅ Previsioni meteo dettagliate estratte con successo!")
+
     except Exception as e:
-        print(f"⚠️ Errore durante il recupero delle previsioni meteo: {e}")
+        print(f"⚠️ Errore dettagliato nel recupero delle previsioni meteo: {e}")
 
     return forecast_data
 
