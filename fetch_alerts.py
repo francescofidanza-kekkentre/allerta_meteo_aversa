@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
+from datetime import datetime
 import json
 import re
 from zoneinfo import ZoneInfo
@@ -7,8 +6,7 @@ from bs4 import BeautifulSoup
 import requests
 
 def get_campania_alert_status():
-    """Rileva l'allerta meteo dai comunicati ufficiali (Google News RSS).
-    Utilizza una memoria di 24 ore ma si resetta istantaneamente in caso di revoca."""
+    """Rileva l'allerta meteo interrogando l'API JSON ufficiale del Centro Funzionale per la Zona 1."""
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -22,58 +20,42 @@ def get_campania_alert_status():
         " per la Zona 1 (Piana Campana)."
     )
 
-    # Finestra di ricerca portata a 24h per coprire l'intero ciclo vitale di un bollettino
-    rss_url = "https://news.google.com/rss/search?q=site:regione.campania.it+%22allerta+meteo%22+when:24h&hl=it&gl=IT&ceid=IT:it"
+    # L'API diretta e nascosta del Centro Funzionale che restituisce il JSON puro
+    api_url = "https://centrofunzionale.regione.campania.it/CentroFunzionalePortaleRest/rest/bollettinometeo/findLastBollettinoInserito/"
 
     try:
-        response = requests.get(rss_url, headers=headers, timeout=10)
+        response = requests.get(api_url, headers=headers, timeout=10)
 
         if response.status_code == 200:
-            soup = BeautifulSoup(response.content, "xml")
-            items = soup.find_all("item")
-            now_utc = datetime.now(timezone.utc)
-
-            print(f"🔍 Articoli trovati da Protezione Civile nelle ultime 24h: {len(items)}")
-
-            for item in items:
-                title = item.title.text.lower()
-                pub_date_str = item.pubDate.text if item.pubDate else None
-                print(f"  📰 Titolo: {item.title.text} | Data: {pub_date_str}")
-
-                # Filtro orario: scarta solo se più vecchio di 24 ore
-                if pub_date_str:
-                    try:
-                        pub_dt = parsedate_to_datetime(pub_date_str)
-                        age_hours = (now_utc - pub_dt).total_seconds() / 3600
-                        if age_hours > 24 and "prorog" not in title:
-                            print(f"  ⏳ Scartato perché troppo vecchio ({age_hours:.1f} ore fa).")
-                            continue
-                    except Exception as e:
-                        print(f"  ⚠️ Errore parsing data: {e}")
-
-                # Rileva comunicati di revoca o fine allerta
-                if any(w in title for w in ["revocat", "termina", "scade", "fine", "cessat", "verde", "rientr", "scadut"]):
-                    print("  ✅ Trovato avviso di fine o revoca dell'allerta. Ritorno a VERDE.")
-                    status = "VERDE"
-                    raw_message = "Allerta meteo terminata o revocata. Condizioni nella norma per la Zona 1."
-                    break
-
-                # Rileva il colore dell'allerta
-                if "rossa" in title:
-                    status = "ROSSA"
-                    raw_message = "Allerta meteo ROSSA diramata dalla Protezione Civile Campania per la Zona 1 (Piana Campana)."
-                    break
-                elif "arancione" in title:
-                    status = "ARANCIONE"
-                    raw_message = "Allerta meteo ARANCIONE diramata dalla Protezione Civile Campania per la Zona 1 (Piana Campana)."
-                    break
-                elif "gialla" in title:
-                    status = "GIALLA"
-                    raw_message = "Allerta meteo GIALLA diramata dalla Protezione Civile Campania per la Zona 1 (Piana Campana)."
-                    break
+            dati = response.json()
+            
+            # Scorriamo la lista delle zone per trovare la Zona 1 (Aversa)
+            for area in dati.get("bollettinoMeteoBindList", []):
+                if area.get("zona") == 1:
+                    # Leggiamo la descrizione (es: "Livello di allerta... verde/giallo")
+                    descrizione = area.get("livelloDesc", "").upper()
+                    
+                    if "ROSS" in descrizione:
+                        status = "ROSSA"
+                    elif "ARANCION" in descrizione:
+                        status = "ARANCIONE"
+                    elif "GIALL" in descrizione:
+                        status = "GIALLA"
+                    else:
+                        status = "VERDE"
+                    
+                    # Aggiorniamo il messaggio da mostrare nell'app
+                    if status != "VERDE":
+                        raw_message = (
+                            f"Allerta meteo {status} confermata dal bollettino del "
+                            f"Centro Funzionale Multirischi Campania per la Zona 1."
+                        )
+                    
+                    print(f"✅ Dati API letti con successo! Stato Zona 1: {status}")
+                    break # Zona 1 trovata, possiamo fermare il ciclo
 
     except Exception as e:
-        print(f"⚠️ Errore durante la consultazione RSS: {e}")
+        print(f"⚠️ Errore durante l'interrogazione dell'API: {e}")
 
     return status, raw_message
 
