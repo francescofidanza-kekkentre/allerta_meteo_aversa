@@ -5,6 +5,56 @@ from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 import requests
 
+def get_campania_alert_status():
+    """Rileva l'allerta meteo interrogando l'API JSON ufficiale del Centro Funzionale per la Zona 1."""
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
+
+    status = "VERDE"
+    raw_message = (
+        "Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma"
+        " per la Zona 1 (Piana Campana)."
+    )
+
+    api_url = "https://centrofunzionale.regione.campania.it/CentroFunzionalePortaleRest/rest/bollettinometeo/findLastBollettinoInserito/"
+
+    try:
+        response = requests.get(api_url, headers=headers, timeout=10)
+
+        if response.status_code == 200:
+            dati = response.json()
+            for area in dati.get("bollettinoMeteoBindList", []):
+                if area.get("zona") == 1:
+                    descrizione = area.get("livelloDesc", "").upper()
+                    
+                    if "ROSS" in descrizione:
+                        status = "ROSSA"
+                    elif "ARANCION" in descrizione:
+                        status = "ARANCIONE"
+                    elif "GIALL" in descrizione:
+                        status = "GIALLA"
+                    else:
+                        status = "VERDE"
+                    
+                    if status != "VERDE":
+                        raw_message = (
+                            f"Allerta meteo {status} confermata dal bollettino del "
+                            f"Centro Funzionale Multirischi Campania per la Zona 1."
+                        )
+                    
+                    print(f"✅ Stato allerta Zona 1: {status}")
+                    break
+
+    except Exception as e:
+        print(f"⚠️ Errore durante l'interrogazione dell'API allerte: {e}")
+
+    return status, raw_message
+
+
 def get_campania_weather_forecast():
     """Estrae le previsioni meteo dettagliate e le icone per la Zona 1."""
     headers = {
@@ -103,7 +153,6 @@ def fetch_and_update_alert():
 
     message = clean_weather_message(raw_message)
 
-    # Costruiamo un file JSON ricco di informazioni per la PWA
     alert_data = {
         "status": status,
         "message": message,
