@@ -1,6 +1,6 @@
 {
-  "status": "VERDE",
-  "message": "Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma per la Zona 1 (Piana Campana).",
+  "status": "GIALLA",
+  "message": "Allerta meteo GIALLA diramata dalla Protezione Civile Campania per la Zona 1 (Piana Campana).",
   "schools_closed": false,
-  "updated_at": "02/11/2026, 19:35:00"
+  "updated_at": "02/11/2026, 19:39:48"
 }
