@@ -101,10 +101,10 @@
             </div>
           </div>
 
-          <!-- VALORE GRANDE AL CENTRO CON TEMPERATURA PRECISA (DECIMALE) -->
+          <!-- VALORE GRANDE AL CENTRO CON °C -->
           <div class="text-center py-1 space-y-0.5">
             <h1 class="text-xl font-bold text-slate-900">Aversa</h1>
-            <div id="currentTemp" class="text-6xl font-black tracking-tight text-slate-900">--°</div>
+            <div id="currentTemp" class="text-6xl font-black tracking-tight text-slate-900">--°C</div>
             <div id="weatherDesc" class="text-sm font-medium text-slate-500">Aggiornamento meteo...</div>
           </div>
 
@@ -278,7 +278,7 @@
       }
 
       try {
-        const urlMeteo = 'https://api.open-meteo.com/v1/forecast?latitude=40.9731&longitude=14.2043&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,rain_sum&timezone=Europe%2FRome&forecast_days=3';
+        const urlMeteo = 'https://api.open-meteo.com/v1/forecast?latitude=40.9731&longitude=14.2043&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,rain_sum&timezone=Europe%2FRome&forecast_days=3';
         const resMeteo = await fetch(urlMeteo, { cache: 'no-store' });
         if (resMeteo.ok) {
           const meteoData = await resMeteo.json();
@@ -348,8 +348,8 @@
       const daily = data.daily;
       const weatherInfo = getWmoWeatherDetails(current.weather_code);
 
-      // 1. Valore grande al centro con la temperatura precisa (decimale, es. 14.7°)
-      document.getElementById('currentTemp').textContent = `${current.temperature_2m.toFixed(1)}°`;
+      // 1. Valore grande al centro con °C
+      document.getElementById('currentTemp').textContent = `${current.temperature_2m.toFixed(1)}°C`;
       document.getElementById('weatherDesc').textContent = weatherInfo.desc;
       if (document.getElementById('weatherSummaryDesc')) {
         document.getElementById('weatherSummaryDesc').textContent = weatherInfo.desc;
@@ -414,12 +414,12 @@
         plugins: [currentTimeLinePlugin]
       });
 
-      // Rendering Lista Oraria verticale
+      // Rendering Lista Oraria verticale con Vento
       renderForecastList(data.hourly);
     }
 
     // -------------------------------------------------------------
-    // 7. RENDERING LISTA ORARIA VERTICALE
+    // 7. RENDERING LISTA ORARIA VERTICALE (Con Vento)
     // -------------------------------------------------------------
     function renderForecastList(hourly) {
       const container = document.getElementById('forecastContainer');
@@ -454,6 +454,7 @@
         const info = getWmoWeatherDetails(code);
         const temp = Math.round(hourly.temperature_2m[i]);
         const pop = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
+        const wind = hourly.wind_speed_10m ? Math.round(hourly.wind_speed_10m[i]) : 0;
 
         if (dayName !== currentDayGroup) {
           currentDayGroup = dayName;
@@ -474,9 +475,10 @@
               <span class="font-medium text-slate-600">${info.desc}</span>
             </div>
           </div>
-          <div class="flex items-center gap-3">
-            ${pop > 0 ? `<span class="text-sky-600 font-semibold text-[11px] flex items-center gap-0.5">💧 ${pop}%</span>` : ''}
-            <span class="font-bold text-slate-800 text-sm">${temp}°</span>
+          <div class="flex items-center gap-2.5">
+            <span class="text-slate-400 text-[11px]">💨 ${wind} km/h</span>
+            ${pop > 0 ? `<span class="text-sky-600 font-semibold text-[11px]">💧 ${pop}%</span>` : ''}
+            <span class="font-bold text-slate-800 text-sm w-8 text-right">${temp}°</span>
           </div>
         `;
         container.appendChild(row);
