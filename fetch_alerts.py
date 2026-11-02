@@ -59,6 +59,77 @@ def get_campania_alert_status():
     return status, raw_message
 
 
+def get_aversa_open_meteo_forecast():
+    """Estrae le previsioni meteo dettagliate per Aversa tramite Open-Meteo."""
+    # Coordinate geografiche di Aversa (CE)
+    lat = 40.9731
+    lon = 14.2043
+    
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FRome"
+    
+    forecast_info = {
+        "temp_current": None,
+        "temp_max": None,
+        "temp_min": None,
+        "weather_desc": "Previsioni in aggiornamento",
+        "wind_speed": None
+    }
+
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            
+            current = data.get("current", {})
+            daily = data.get("daily", {})
+            
+            forecast_info["temp_current"] = current.get("temperature_2m")
+            forecast_info["wind_speed"] = current.get("wind_speed_10m")
+            
+            if daily.get("temperature_2m_max"):
+                forecast_info["temp_max"] = daily["temperature_2m_max"][0]
+            if daily.get("temperature_2m_min"):
+                forecast_info["temp_min"] = daily["temperature_2m_min"][0]
+                
+            # Codici meteo semplificati WMO
+            wmo_code = current.get("weather_code", 0)
+            forecast_info["weather_desc"] = translate_wmo_code(wmo_code)
+            
+            print("✅ Previsioni Open-Meteo per Aversa scaricate con successo!")
+    except Exception as e:
+        print(f"⚠️ Errore nel recupero dati Open-Meteo: {e}")
+
+    return forecast_info
+
+
+def translate_wmo_code(code):
+    """Converte il codice numerico WMO in una descrizione testuale in italiano."""
+    weather_map = {
+        0: "Cielo sereno",
+        1: "Principalmente sereno",
+        2: "Parzialmente nuvoloso",
+        3: "Coperto",
+        45: "Nebbia",
+        48: "Nebbia con brina",
+        51: "Pioviggine leggera",
+        53: "Pioviggine moderata",
+        55: "Pioviggine densa",
+        61: "Pioggia debole",
+        63: "Pioggia moderata",
+        65: "Pioggia forte",
+        71: "Nevicata debole",
+        73: "Nevicata moderata",
+        75: "Nevicata forte",
+        80: "Rovesci di pioggia deboli",
+        81: "Rovesci di pioggia moderati",
+        82: "Rovesci di pioggia violenti",
+        95: "Temporale",
+        96: "Temporale con grandine leggera",
+        99: "Temporale con grandine forte"
+    }
+    return weather_map.get(code, "Variabile")
+
+
 def check_aversa_school_status():
     """Verifica se è stata emessa un'ordinanza di chiusura scuole ad Aversa."""
     headers = {
@@ -96,9 +167,11 @@ def clean_weather_message(raw_message):
 
 
 def fetch_and_update_alert():
-    print("Avvio aggiornamento dati allerte e scuole...")
+    print("Avvio aggiornamento dati allerte, meteo e scuole...")
 
     status, raw_message = get_campania_alert_status()
+    weather_data = get_aversa_open_meteo_forecast()
+    
     print(f"📡 STATO FINALE ALLERTA: {status}")
 
     schools_closed = False
@@ -107,9 +180,15 @@ def fetch_and_update_alert():
 
     message = clean_weather_message(raw_message)
 
+    # Struttura dati completa inviata alla PWA tramite alert.json
     alert_data = {
         "status": status,
         "message": message,
+        "weather_summary": weather_data["weather_desc"],
+        "temperature": weather_data["temp_current"],
+        "temp_max": weather_data["temp_max"],
+        "temp_min": weather_data["temp_min"],
+        "wind_speed": weather_data["wind_speed"],
         "schools_closed": schools_closed,
         "updated_at": datetime.now(ZoneInfo("Europe/Rome")).strftime(
             "%d/%m/%Y, %H:%M:%S"
@@ -119,7 +198,7 @@ def fetch_and_update_alert():
     try:
         with open("alert.json", "w", encoding="utf-8") as f:
             json.dump(alert_data, f, ensure_ascii=False, indent=2)
-        print("✅ File alert.json generato con successo!")
+        print("✅ File alert.json generato con previsioni e allerte!")
     except Exception as e:
         print(f"❌ Errore durante il salvataggio di alert.json: {e}")
 
