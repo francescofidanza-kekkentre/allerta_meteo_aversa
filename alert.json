@@ -1,11 +1,11 @@
 {
   "status": "VERDE",
   "message": "Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma per la Zona 1 (Piana Campana).",
-  "weather_summary": "Coperto",
-  "temperature": 13.0,
+  "weather_summary": "Cielo sereno",
+  "temperature": 12.5,
   "temp_max": 18.9,
   "temp_min": 10.3,
   "wind_speed": 6.4,
   "schools_closed": false,
-  "updated_at": "05/11/2026, 20:27:12"
+  "updated_at": "05/11/2026, 21:24:50"
 }
