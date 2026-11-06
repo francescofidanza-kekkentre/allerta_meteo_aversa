@@ -1,12 +1,23 @@
 from datetime import datetime
 import json
 import re
+import sys
 from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 import requests
 
+
+class AlertSourceError(Exception):
+    """Il bollettino ufficiale non è disponibile o non è interpretabile."""
+
+
 def get_campania_alert_status():
-    """Rileva l'allerta meteo interrogando l'API JSON ufficiale del Centro Funzionale per la Zona 1."""
+    """Rileva l'allerta meteo interrogando l'API JSON ufficiale del Centro Funzionale per la Zona 1.
+
+    Solleva AlertSourceError se il dato non è affidabile (API irraggiungibile,
+    risposta non valida, Zona 1 assente o livello non riconosciuto), così da
+    non pubblicare mai un VERDE "di default".
+    """
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -14,48 +25,50 @@ def get_campania_alert_status():
         )
     }
 
-    status = "VERDE"
-    raw_message = (
-        "Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma"
-        " per la Zona 1 (Piana Campana)."
-    )
-
     api_url = "https://centrofunzionale.regione.campania.it/CentroFunzionalePortaleRest/rest/bollettinometeo/findLastBollettinoInserito/"
 
     try:
-        response = requests.get(api_url, headers=headers, timeout=10)
+        response = requests.get(api_url, headers=headers, timeout=20)
+        response.raise_for_status()
+        dati = response.json()
+    except (requests.RequestException, ValueError) as e:
+        raise AlertSourceError(f"API Centro Funzionale non disponibile: {e}") from e
 
-        if response.status_code == 200:
-            dati = response.json()
-            for area in dati.get("bollettinoMeteoBindList", []):
-                if area.get("zona") == 1:
-                    descrizione = area.get("livelloDesc", "").upper()
-                    fenomeni = area.get("fenomeni", "")
-                    
-                    if "ROSS" in descrizione:
-                        status = "ROSSA"
-                    elif "ARANCION" in descrizione:
-                        status = "ARANCIONE"
-                    elif "GIALL" in descrizione:
-                        status = "GIALLA"
-                    else:
-                        status = "VERDE"
-                    
-                    if status != "VERDE":
-                        raw_message = (
-                            f"Allerta meteo {status} confermata dal bollettino del "
-                            f"Centro Funzionale Multirischi Campania per la Zona 1. {fenomeni}"
-                        )
-                    else:
-                        if fenomeni:
-                            raw_message = f"Condizioni per la Zona 1: {fenomeni}"
-                    
-                    print(f"✅ Stato allerta Zona 1: {status}")
-                    break
+    area = next(
+        (a for a in dati.get("bollettinoMeteoBindList") or [] if a.get("zona") == 1),
+        None,
+    )
+    if area is None:
+        raise AlertSourceError("Zona 1 assente nel bollettino del Centro Funzionale.")
 
-    except Exception as e:
-        print(f"⚠️ Errore durante l'interrogazione dell'API allerte: {e}")
+    descrizione = (area.get("livelloDesc") or "").upper()
+    fenomeni = area.get("fenomeni") or ""
 
+    if "ROSS" in descrizione:
+        status = "ROSSA"
+    elif "ARANCION" in descrizione:
+        status = "ARANCIONE"
+    elif "GIALL" in descrizione:
+        status = "GIALLA"
+    elif "VERD" in descrizione:
+        status = "VERDE"
+    else:
+        raise AlertSourceError(f"Livello di allerta non riconosciuto: {descrizione!r}")
+
+    if status != "VERDE":
+        raw_message = (
+            f"Allerta meteo {status} confermata dal bollettino del "
+            f"Centro Funzionale Multirischi Campania per la Zona 1. {fenomeni}"
+        )
+    elif fenomeni:
+        raw_message = f"Condizioni per la Zona 1: {fenomeni}"
+    else:
+        raw_message = (
+            "Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma"
+            " per la Zona 1 (Piana Campana)."
+        )
+
+    print(f"✅ Stato allerta Zona 1: {status} (bollettino {dati.get('dataEmissione')})")
     return status, raw_message
 
 
@@ -169,7 +182,15 @@ def clean_weather_message(raw_message):
 def fetch_and_update_alert():
     print("Avvio aggiornamento dati allerte, meteo e scuole...")
 
-    status, raw_message = get_campania_alert_status()
+    try:
+        status, raw_message = get_campania_alert_status()
+    except AlertSourceError as e:
+        # Non sovrascrivere alert.json: resta pubblicato l'ultimo dato valido
+        # e il workflow fallisce, rendendo l'errore visibile in GitHub Actions.
+        print(f"❌ {e}")
+        print("❌ alert.json NON aggiornato: resta valido l'ultimo stato pubblicato.")
+        sys.exit(1)
+
     weather_data = get_aversa_open_meteo_forecast()
     
     print(f"📡 STATO FINALE ALLERTA: {status}")
