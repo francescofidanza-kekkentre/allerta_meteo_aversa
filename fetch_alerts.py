@@ -282,6 +282,7 @@ def translate_wmo_code(code):
 # ---------------------------------------------------------------------------
 ALBO_URL = "https://aversa.nuvolapalitalsoft.it/?page_id=35624"  # Albo pretorio online
 COMUNE_FEED_URL = "https://comune.aversa.ce.it/feed/?post_type=notizia"  # Novità del sito istituzionale
+COMUNE_DOCUMENTI_URL = "https://comune.aversa.ce.it/feed/?post_type=documento_pubblico"  # Documenti/ordinanze sul sito
 
 MESI = {
     "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4, "maggio": 5, "giugno": 6,
@@ -349,7 +350,8 @@ def _valuta_atto(testo, data_atto, oggi):
 
 def _atti_albo_pretorio(headers):
     """Atti in pubblicazione sull'albo pretorio: (testo, data atto, link)."""
-    resp = requests.get(ALBO_URL, headers=headers, timeout=30)
+    # Connessione breve: l'albo non risponde dagli IP esteri (es. runner GitHub)
+    resp = requests.get(ALBO_URL, headers=headers, timeout=(8, 30))
     resp.raise_for_status()
     soup = BeautifulSoup(resp.content, "lxml")
     tabella = soup.find("table", id="tabella_risultati")
@@ -374,9 +376,9 @@ def _atti_albo_pretorio(headers):
     return atti
 
 
-def _notizie_sito_comune(headers):
-    """Novità pubblicate sul sito del Comune: (titolo + estratto, data, link)."""
-    resp = requests.get(COMUNE_FEED_URL, headers=headers, timeout=30)
+def _feed_sito_comune(url, headers):
+    """Elementi di un feed RSS del sito del Comune: (titolo + estratto, data, link)."""
+    resp = requests.get(url, headers=headers, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.content, "xml")
     notizie = []
@@ -388,7 +390,7 @@ def _notizie_sito_comune(headers):
         notizie.append((
             f"{item.title.text.strip()} - {estratto}",
             data,
-            item.link.text.strip() if item.link else COMUNE_FEED_URL,
+            item.link.text.strip() if item.link else url,
         ))
     return notizie
 
@@ -408,7 +410,12 @@ def check_aversa_school_status():
     oggi = datetime.now(ROME).date()
 
     atti, fonti_ok = [], 0
-    for nome, fonte in (("albo pretorio", _atti_albo_pretorio), ("sito del Comune", _notizie_sito_comune)):
+    fonti = (
+        ("albo pretorio", _atti_albo_pretorio),
+        ("novità sito Comune", lambda h: _feed_sito_comune(COMUNE_FEED_URL, h)),
+        ("documenti sito Comune", lambda h: _feed_sito_comune(COMUNE_DOCUMENTI_URL, h)),
+    )
+    for nome, fonte in fonti:
         try:
             risultati = fonte(headers)
             print(f"🏫 {nome}: {len(risultati)} atti/notizie letti")
