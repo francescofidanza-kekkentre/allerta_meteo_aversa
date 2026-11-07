@@ -1,11 +1,12 @@
 {
-  "status": "GIALLA",
-  "message": "Allerta meteo GIALLA confermata dal bollettino del Centro Funzionale Multirischi Campania per la Zona 1. Precipitazioni locali, anche a carattere di rovescio o isolato temporale, puntualmente di moderata intensità.",
+  "status": "VERDE",
+  "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il Bollettino di criticità nazionale della Protezione Civile del 07/11/2026 ore 14:05.",
   "weather_summary": "Nebbia",
-  "temperature": 13.9,
+  "temperature": 13.5,
   "temp_max": 17.7,
   "temp_min": 11.9,
-  "wind_speed": 3.6,
+  "wind_speed": 3.9,
   "schools_closed": false,
-  "updated_at": "07/11/2026, 19:37:48"
+  "schools_notice": null,
+  "updated_at": "07/11/2026, 20:04:53"
 }
