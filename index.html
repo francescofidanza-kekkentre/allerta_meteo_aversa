@@ -569,11 +569,34 @@
     // -------------------------------------------------------------
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
           .then(() => console.log('Service Worker registrato con successo.'))
           .catch(err => console.error('Errore registrazione Service Worker:', err));
       });
     }
+
+    // Quando l'app torna in primo piano (es. PWA ripresa dallo sfondo senza
+    // ricaricare), controlla se il frontend è cambiato e in quel caso ricarica.
+    let frontendVersion = null;
+    async function getFrontendVersion() {
+      try {
+        const res = await fetch('./index.html', { method: 'HEAD', cache: 'no-cache' });
+        return res.headers.get('etag') || res.headers.get('last-modified');
+      } catch (err) {
+        return null; // offline: nessun controllo
+      }
+    }
+    getFrontendVersion().then(v => { frontendVersion = v; });
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState !== 'visible') return;
+      navigator.serviceWorker?.getRegistration().then(reg => reg && reg.update());
+      const latest = await getFrontendVersion();
+      if (frontendVersion && latest && latest !== frontendVersion) {
+        location.reload();
+      } else if (latest) {
+        frontendVersion = latest;
+      }
+    });
 
     const installBtn = document.getElementById('installBtn');
     window.addEventListener('beforeinstallprompt', (e) => {
