@@ -81,6 +81,7 @@
                 <span id="schoolStatus" class="font-black">APERTE</span>
               </div>
             </div>
+            <a id="schoolNotice" href="#" target="_blank" rel="noopener" class="hidden block text-[11px] font-medium leading-snug text-red-800 underline underline-offset-2"></a>
           </div>
 
           <!-- RIQUADRO BLU (SINTESI METEO AVERSA) - VENTO & PIOGGIA -->
@@ -384,6 +385,16 @@
       } else {
         schoolStatus.textContent = 'APERTE';
         schoolStatus.className = 'font-black text-emerald-900';
+      }
+
+      // Riferimento all'atto ufficiale del Comune (ordinanza/avviso) con link
+      const schoolNotice = document.getElementById('schoolNotice');
+      if (data.schools_closed && data.schools_notice && data.schools_notice.text) {
+        schoolNotice.textContent = data.schools_notice.text;
+        schoolNotice.href = data.schools_notice.url || '#';
+        schoolNotice.classList.remove('hidden');
+      } else {
+        schoolNotice.classList.add('hidden');
       }
 
       const status = (data.status || 'VERDE').toUpperCase();

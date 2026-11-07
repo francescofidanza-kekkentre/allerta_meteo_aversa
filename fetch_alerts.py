@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
 import json
 import re
 import sys
@@ -143,30 +144,174 @@ def translate_wmo_code(code):
     return weather_map.get(code, "Variabile")
 
 
+# ---------------------------------------------------------------------------
+# Chiusura scuole: fonti ufficiali del Comune di Aversa
+# ---------------------------------------------------------------------------
+ALBO_URL = "https://aversa.nuvolapalitalsoft.it/?page_id=35624"  # Albo pretorio online
+COMUNE_FEED_URL = "https://comune.aversa.ce.it/feed/?post_type=notizia"  # Novità del sito istituzionale
+ROME = ZoneInfo("Europe/Rome")
+
+MESI = {
+    "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4, "maggio": 5, "giugno": 6,
+    "luglio": 7, "agosto": 8, "settembre": 9, "ottobre": 10, "novembre": 11, "dicembre": 12,
+}
+# Un atto riguarda la chiusura generale delle scuole se cita le scuole, una
+# chiusura/sospensione e un ambito generale (tutte le scuole o motivo meteo).
+RE_SCUOLE = re.compile(r"scuol|scolastic|didattic|istitut\w* comprensiv")
+RE_CHIUSURA = re.compile(r"chius|sospension|sospes|interruzion")
+RE_AMBITO = re.compile(
+    r"ogni ordine|tutte le scuole|tutti gli istituti|tutti i plessi|intero territorio"
+    r"|territorio comunale|allerta|meteo|maltempo|avvers|precipitazion|vento|neve"
+    r"|protezione civile"
+)
+# Ordinanze di viabilità ("Via X: chiusura al traffico presso il plesso scolastico")
+RE_VIABILITA = re.compile(r"circolazione|\bsosta\b|viabilit|traffico")
+
+
+def _date_nel_testo(testo, riferimento):
+    """Estrae le date citate nel testo ("12 novembre 2026", "11 e 12 novembre", "12/11/2026")."""
+    date = []
+    for g, m, a in re.findall(r"\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\b", testo):
+        try:
+            date.append(datetime(int(a), int(m), int(g)).date())
+        except ValueError:
+            pass
+    pattern_mese = (
+        r"((?:\d{1,2}\s*(?:,|e|ed|-|al|/)?\s*)+)(" + "|".join(MESI) + r")(?:\s+(\d{4}))?"
+    )
+    for giorni, mese, anno in re.findall(pattern_mese, testo):
+        for g in re.findall(r"\d{1,2}", giorni):
+            anno_val = int(anno) if anno else riferimento.year
+            try:
+                d = datetime(anno_val, MESI[mese], int(g)).date()
+            except ValueError:
+                continue
+            if not anno and (d - riferimento).days < -180:  # es. atto di dicembre per gennaio
+                d = d.replace(year=d.year + 1)
+            date.append(d)
+    return date
+
+
+def _valuta_atto(testo, data_atto, oggi):
+    """Restituisce "chiusura", "revoca" o None per un atto, considerando le sue date.
+
+    Se l'atto cita delle date, conta solo se il periodo tocca oggi o domani;
+    altrimenti vale solo se emesso oggi o ieri.
+    """
+    t = testo.lower()
+    if not (RE_SCUOLE.search(t) and RE_CHIUSURA.search(t)) or RE_VIABILITA.search(t):
+        return None
+    if "revoc" in t:
+        return "revoca" if (oggi - data_atto).days <= 2 else None
+    if not RE_AMBITO.search(t):
+        return None
+
+    date = _date_nel_testo(t, data_atto)
+    if date:
+        domani = oggi + timedelta(days=1)
+        attivo = min(date) <= domani and max(date) >= oggi
+    else:
+        attivo = 0 <= (oggi - data_atto).days <= 1
+    return "chiusura" if attivo else None
+
+
+def _atti_albo_pretorio(headers):
+    """Atti in pubblicazione sull'albo pretorio: (testo, data atto, link)."""
+    resp = requests.get(ALBO_URL, headers=headers, timeout=30)
+    resp.raise_for_status()
+    soup = BeautifulSoup(resp.content, "lxml")
+    tabella = soup.find("table", id="tabella_risultati")
+    if tabella is None or tabella.tbody is None:
+        raise ValueError("tabella dell'albo pretorio non trovata")
+    atti = []
+    for riga in tabella.tbody.find_all("tr"):
+        celle = [td.get_text(" ", strip=True) for td in riga.find_all("td")]
+        if len(celle) < 7:
+            continue
+        tipo, numero, data_str, oggetto = celle[2], celle[3], celle[4], celle[5]
+        try:
+            data_atto = datetime.strptime(data_str, "%d/%m/%Y").date()
+        except ValueError:
+            continue
+        link = riga.find("a", href=True)
+        atti.append((
+            f"{tipo} n. {numero} del {data_str}: {oggetto}",
+            data_atto,
+            link["href"] if link else ALBO_URL,
+        ))
+    return atti
+
+
+def _notizie_sito_comune(headers):
+    """Novità pubblicate sul sito del Comune: (titolo + estratto, data, link)."""
+    resp = requests.get(COMUNE_FEED_URL, headers=headers, timeout=30)
+    resp.raise_for_status()
+    soup = BeautifulSoup(resp.content, "xml")
+    notizie = []
+    for item in soup.find_all("item"):
+        if not (item.title and item.pubDate):
+            continue
+        estratto = BeautifulSoup(item.description.text, "lxml").get_text(" ", strip=True) if item.description else ""
+        data = parsedate_to_datetime(item.pubDate.text).astimezone(ROME).date()
+        notizie.append((
+            f"{item.title.text.strip()} - {estratto}",
+            data,
+            item.link.text.strip() if item.link else COMUNE_FEED_URL,
+        ))
+    return notizie
+
+
 def check_aversa_school_status():
-    """Verifica se è stata emessa un'ordinanza di chiusura scuole ad Aversa."""
+    """Verifica sulle fonti ufficiali del Comune se le scuole di Aversa sono chiuse.
+
+    Restituisce (chiuse, avviso) dove avviso è {"text", "url"} dell'atto trovato,
+    oppure None se nessuna fonte è raggiungibile (stato non determinabile).
+    """
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
     }
+    oggi = datetime.now(ROME).date()
 
-    comune_rss = "https://news.google.com/rss/search?q=site:comune.aversa.ce.it+(scuole+OR+ordinanza)+when:12h&hl=it&gl=IT&ceid=IT:it"
+    atti, fonti_ok = [], 0
+    for nome, fonte in (("albo pretorio", _atti_albo_pretorio), ("sito del Comune", _notizie_sito_comune)):
+        try:
+            risultati = fonte(headers)
+            print(f"🏫 {nome}: {len(risultati)} atti/notizie letti")
+            atti.extend(risultati)
+            fonti_ok += 1
+        except Exception as e:
+            print(f"⚠️ Errore lettura {nome}: {e}")
+    if fonti_ok == 0:
+        return None
+
+    chiusure, revoche = [], []
+    for testo, data_atto, link in atti:
+        esito = _valuta_atto(testo, data_atto, oggi)
+        if esito == "chiusura":
+            chiusure.append((data_atto, testo, link))
+        elif esito == "revoca":
+            revoche.append((data_atto, testo, link))
+
+    if not chiusure:
+        return False, None
+    data_c, testo_c, link_c = max(chiusure, key=lambda x: x[0])
+    if revoche and max(revoche, key=lambda x: x[0])[0] >= data_c:
+        print(f"🏫 Chiusura revocata: {max(revoche, key=lambda x: x[0])[1]}")
+        return False, None
+    print(f"🏫 Chiusura scuole trovata: {testo_c}")
+    return True, {"text": testo_c, "url": link_c}
+
+
+def _stato_scuole_precedente():
     try:
-        resp_comune = requests.get(comune_rss, headers=headers, timeout=10)
-        if resp_comune.status_code == 200:
-            soup = BeautifulSoup(resp_comune.content, "xml")
-            items = soup.find_all("item")
-            for item in items[:5]:
-                title = item.title.text.lower()
-                if ("scuole" in title or "scuola" in title or "ordinanza" in title) and (
-                    "chius" in title or "sospens" in title or "stop" in title
-                ):
-                    return True
-    except Exception as e:
-        print(f"⚠️ Errore controllo sito Comune: {e}")
-
-    return False
+        with open("alert.json", encoding="utf-8") as f:
+            precedente = json.load(f)
+        return precedente.get("schools_closed", False), precedente.get("schools_notice")
+    except (OSError, ValueError):
+        return False, None
 
 
 def clean_weather_message(raw_message):
@@ -195,9 +340,14 @@ def fetch_and_update_alert():
     
     print(f"📡 STATO FINALE ALLERTA: {status}")
 
-    schools_closed = False
-    if status != "VERDE":
-        schools_closed = check_aversa_school_status()
+    scuole = check_aversa_school_status()
+    if scuole is None:
+        # Fonti del Comune non raggiungibili: mantieni l'ultimo stato noto.
+        print("⚠️ Stato scuole non verificabile: mantengo l'ultimo valore pubblicato.")
+        schools_closed, schools_notice = _stato_scuole_precedente()
+    else:
+        schools_closed, schools_notice = scuole
+    print(f"🏫 Scuole: {'CHIUSE' if schools_closed else 'APERTE'}")
 
     message = clean_weather_message(raw_message)
 
@@ -211,6 +361,7 @@ def fetch_and_update_alert():
         "temp_min": weather_data["temp_min"],
         "wind_speed": weather_data["wind_speed"],
         "schools_closed": schools_closed,
+        "schools_notice": schools_notice,
         "updated_at": datetime.now(ZoneInfo("Europe/Rome")).strftime(
             "%d/%m/%Y, %H:%M:%S"
         ),
