@@ -2,10 +2,10 @@
   "status": "GIALLA",
   "message": "Allerta meteo GIALLA confermata dal bollettino del Centro Funzionale Multirischi Campania per la Zona 1. Precipitazioni locali, anche a carattere di rovescio o isolato temporale, puntualmente di moderata intensità.",
   "weather_summary": "Parzialmente nuvoloso",
-  "temperature": 16.0,
-  "temp_max": 17.8,
+  "temperature": 17.0,
+  "temp_max": 17.7,
   "temp_min": 11.9,
-  "wind_speed": 6.3,
+  "wind_speed": 6.4,
   "schools_closed": false,
-  "updated_at": "07/11/2026, 09:48:03"
+  "updated_at": "07/11/2026, 10:43:34"
 }
