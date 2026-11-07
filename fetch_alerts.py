@@ -1,39 +1,75 @@
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 import json
+import os
 import re
 import sys
 from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 import requests
 
+ROME = ZoneInfo("Europe/Rome")
+BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+}
+REGIONE_API_URL = "https://centrofunzionale.regione.campania.it/CentroFunzionalePortaleRest/rest/bollettinometeo/findLastBollettinoInserito/"
+DPC_REPO = "pcm-dpc/DPC-Bollettini-Criticita-Idrogeologica-Idraulica"
+# Nome della zona di allerta DPC che contiene Aversa (= Zona 1 Campania)
+COMUNE = "Aversa"
+
 
 class AlertSourceError(Exception):
     """Il bollettino ufficiale non è disponibile o non è interpretabile."""
 
 
-def get_campania_alert_status():
-    """Rileva l'allerta meteo interrogando l'API JSON ufficiale del Centro Funzionale per la Zona 1.
+class BollettinoScaduto(AlertSourceError):
+    """L'ultimo bollettino regionale ha un periodo di validità già concluso."""
 
-    Solleva AlertSourceError se il dato non è affidabile (API irraggiungibile,
-    risposta non valida, Zona 1 assente o livello non riconosciuto), così da
-    non pubblicare mai un VERDE "di default".
+
+def _livello_da_testo(testo):
+    t = (testo or "").upper()
+    if "ROSS" in t:
+        return "ROSSA"
+    if "ARANCION" in t:
+        return "ARANCIONE"
+    if "GIALL" in t:
+        return "GIALLA"
+    if "VERD" in t or "NESSUNA ALLERTA" in t:
+        return "VERDE"
+    raise AlertSourceError(f"Livello di allerta non riconosciuto: {testo!r}")
+
+
+def _data_regione(valore):
+    """Converte "10:00 - 07/11/2026" in datetime (ora di Roma)."""
+    return datetime.strptime(valore.strip(), "%H:%M - %d/%m/%Y").replace(tzinfo=ROME)
+
+
+def get_bollettino_regione(adesso):
+    """Ultimo bollettino del Centro Funzionale Multirischi Campania per la Zona 1.
+
+    Solleva BollettinoScaduto se il periodo di validità è terminato (la Regione
+    pubblica un nuovo bollettino solo quando emette un avviso) e
+    AlertSourceError se il dato non è affidabile.
     """
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
-    }
-
-    api_url = "https://centrofunzionale.regione.campania.it/CentroFunzionalePortaleRest/rest/bollettinometeo/findLastBollettinoInserito/"
-
     try:
-        response = requests.get(api_url, headers=headers, timeout=20)
+        response = requests.get(REGIONE_API_URL, headers=BROWSER_HEADERS, timeout=20)
         response.raise_for_status()
         dati = response.json()
     except (requests.RequestException, ValueError) as e:
         raise AlertSourceError(f"API Centro Funzionale non disponibile: {e}") from e
+
+    try:
+        valido_da = _data_regione(dati["dataDa"])
+        valido_a = _data_regione(dati["dataA"])
+    except (KeyError, TypeError, ValueError) as e:
+        raise AlertSourceError(f"Periodo di validità del bollettino regionale non leggibile: {e}") from e
+    if adesso > valido_a:
+        raise BollettinoScaduto(
+            f"Bollettino regionale del {dati.get('dataEmissione')} scaduto alle {dati['dataA']}."
+        )
 
     area = next(
         (a for a in dati.get("bollettinoMeteoBindList") or [] if a.get("zona") == 1),
@@ -42,35 +78,132 @@ def get_campania_alert_status():
     if area is None:
         raise AlertSourceError("Zona 1 assente nel bollettino del Centro Funzionale.")
 
-    descrizione = (area.get("livelloDesc") or "").upper()
+    status = _livello_da_testo(area.get("livelloDesc"))
     fenomeni = area.get("fenomeni") or ""
-
-    if "ROSS" in descrizione:
-        status = "ROSSA"
-    elif "ARANCION" in descrizione:
-        status = "ARANCIONE"
-    elif "GIALL" in descrizione:
-        status = "GIALLA"
-    elif "VERD" in descrizione:
-        status = "VERDE"
-    else:
-        raise AlertSourceError(f"Livello di allerta non riconosciuto: {descrizione!r}")
+    validita = f"Valido dalle {dati['dataDa']} alle {dati['dataA']}."
 
     if status != "VERDE":
         raw_message = (
             f"Allerta meteo {status} confermata dal bollettino del "
-            f"Centro Funzionale Multirischi Campania per la Zona 1. {fenomeni}"
+            f"Centro Funzionale Multirischi Campania per la Zona 1. {fenomeni} {validita}"
         )
     elif fenomeni:
-        raw_message = f"Condizioni per la Zona 1: {fenomeni}"
+        raw_message = f"Condizioni per la Zona 1: {fenomeni} {validita}"
     else:
         raw_message = (
             "Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma"
-            " per la Zona 1 (Piana Campana)."
+            f" per la Zona 1 (Piana Campana). {validita}"
         )
 
-    print(f"✅ Stato allerta Zona 1: {status} (bollettino {dati.get('dataEmissione')})")
+    print(f"✅ Bollettino regionale Zona 1: {status} (emesso {dati.get('dataEmissione')}, {validita})")
+    return status, raw_message.strip()
+
+
+def _github_get(url):
+    headers = {"Accept": "application/vnd.github+json"}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    response = requests.get(url, headers=headers, timeout=20)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_bollettino_nazionale(adesso):
+    """Livello per la zona di Aversa dal Bollettino di criticità nazionale (Protezione Civile).
+
+    Il DPC pubblica ogni giorno (entro le 16) i file "<data>_<ora>_today.json" e
+    "..._tomorrow.json": si usa l'ultimo emesso, scegliendo "today" se è di oggi
+    o "tomorrow" se è di ieri (bollettino di oggi non ancora uscito).
+    """
+    try:
+        commits = _github_get(
+            f"https://api.github.com/repos/{DPC_REPO}/commits?path=files/topojson&per_page=6"
+        )
+        nomi = set()
+        for commit in commits:
+            dettaglio = _github_get(f"https://api.github.com/repos/{DPC_REPO}/commits/{commit['sha']}")
+            nomi.update(
+                f["filename"] for f in dettaglio.get("files", [])
+                if re.fullmatch(r"files/topojson/\d{8}_\d{4}_(today|tomorrow)\.json", f["filename"])
+            )
+            if len(nomi) >= 2:
+                break
+    except (requests.RequestException, ValueError, KeyError) as e:
+        raise AlertSourceError(f"Bollettino nazionale non disponibile: {e}") from e
+    if not nomi:
+        raise AlertSourceError("Nessun bollettino nazionale trovato.")
+
+    ultimo = max(n.split("/")[-1][:13] for n in nomi)  # es. "20261107_1405"
+    emesso = datetime.strptime(ultimo, "%Y%m%d_%H%M").replace(tzinfo=ROME)
+    giorni = (adesso.date() - emesso.date()).days
+    if giorni == 0:
+        file_scelto = f"files/topojson/{ultimo}_today.json"
+    elif giorni == 1:
+        file_scelto = f"files/topojson/{ultimo}_tomorrow.json"
+    else:
+        raise AlertSourceError(f"Ultimo bollettino nazionale troppo vecchio ({ultimo}).")
+
+    try:
+        response = requests.get(
+            f"https://raw.githubusercontent.com/{DPC_REPO}/master/{file_scelto}", timeout=30
+        )
+        response.raise_for_status()
+        dati = response.json()
+    except (requests.RequestException, ValueError) as e:
+        raise AlertSourceError(f"File del bollettino nazionale non leggibile: {e}") from e
+
+    zona = next(
+        (
+            g.get("properties", {})
+            for o in dati.get("objects", {}).values()
+            for g in o.get("geometries", [])
+            if COMUNE in g.get("properties", {}).get("Comuni", [])
+        ),
+        None,
+    )
+    if zona is None:
+        raise AlertSourceError(f"Zona di {COMUNE} assente nel bollettino nazionale.")
+
+    status = _livello_da_testo(zona.get("Rappresentata nella mappa"))
+    fonte = (
+        "Bollettino di criticità nazionale della Protezione Civile del"
+        f" {emesso.strftime('%d/%m/%Y')} ore {emesso.strftime('%H:%M')}"
+    )
+    if status == "VERDE":
+        raw_message = (
+            "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana)"
+            f" secondo il {fonte}."
+        )
+    else:
+        rischi = [
+            f"{k[len('Per rischio '):]}: {v.split('/')[0].strip().lower()}"
+            for k, v in zona.items()
+            if k.startswith("Per rischio ") and "NESSUNA ALLERTA" not in v.upper()
+        ]
+        raw_message = (
+            f"Allerta meteo {status} per la Zona 1 (Piana Campana) secondo il {fonte}."
+            + (f" Rischio {', '.join(rischi)}." if rischi else "")
+        )
+
+    print(f"✅ Bollettino nazionale ({file_scelto.split('/')[-1]}), zona {zona.get('Nome zona')}: {status}")
     return status, raw_message
+
+
+def get_campania_alert_status():
+    """Stato dell'allerta per Aversa da fonti ufficiali.
+
+    Usa il bollettino regionale se è in corso di validità; se è scaduto o non
+    disponibile ripiega sul Bollettino di criticità nazionale. Se nessuna
+    delle due fonti è affidabile solleva AlertSourceError (alert.json non viene
+    sovrascritto con un VERDE "di default").
+    """
+    adesso = datetime.now(ROME)
+    try:
+        return get_bollettino_regione(adesso)
+    except AlertSourceError as e:
+        print(f"⚠️ {e} Uso il Bollettino di criticità nazionale.")
+    return get_bollettino_nazionale(adesso)
 
 
 def get_aversa_open_meteo_forecast():
@@ -149,7 +282,6 @@ def translate_wmo_code(code):
 # ---------------------------------------------------------------------------
 ALBO_URL = "https://aversa.nuvolapalitalsoft.it/?page_id=35624"  # Albo pretorio online
 COMUNE_FEED_URL = "https://comune.aversa.ce.it/feed/?post_type=notizia"  # Novità del sito istituzionale
-ROME = ZoneInfo("Europe/Rome")
 
 MESI = {
     "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4, "maggio": 5, "giugno": 6,
