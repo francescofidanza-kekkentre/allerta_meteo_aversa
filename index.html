@@ -17,19 +17,40 @@
     <!-- Tailwind CSS & Chart.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      html, body {
+        overscroll-behavior-y: contain;
+      }
+      @keyframes app-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .rotate-spinning {
+        animation: app-spin 0.75s linear infinite !important;
+      }
+      #refreshIcon {
+        transform-origin: center center;
+      }
+    </style>
 </head>
 <body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex justify-center items-start sm:py-6">
 
   <!-- Container App Mobile -->
-  <div class="w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100">
+  <div id="appCard" class="w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100 will-change-transform">
     
+    <!-- Pull-to-refresh indicator -->
+    <div id="pullIndicator" class="overflow-hidden transition-all duration-200 text-center text-xs font-semibold text-slate-400 flex items-center justify-center gap-1.5 h-0 opacity-0 pointer-events-none select-none bg-slate-50 border-b border-slate-100">
+      <span id="pullText">Trascina per aggiornare</span>
+    </div>
+
     <div class="p-5 space-y-4">
       
       <!-- Intestazione superiore -->
       <div class="flex justify-between items-center text-sm font-semibold text-slate-600">
         <span>Allerte Scuole e Meteo - Aversa</span>
-        <button id="refreshBtn" onclick="loadAllData()" class="p-2 bg-slate-200/70 hover:bg-slate-300/70 rounded-full transition-colors text-slate-600" title="Ricarica dati">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="refreshBtn" onclick="refreshApp()" class="p-2 bg-slate-200/70 hover:bg-slate-300/70 rounded-full transition-colors text-slate-600 focus:outline-none" title="Ricarica dati">
+          <svg id="refreshIcon" class="w-4 h-4 transition-transform origin-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
         </button>
@@ -341,6 +362,48 @@
     // -------------------------------------------------------------
     // 4. CARICAMENTO DATI (alert.json + Open-Meteo per 3 giorni)
     // -------------------------------------------------------------
+    let isRefreshing = false;
+
+    function setRefreshingState(refreshing) {
+      const icon = document.getElementById('refreshIcon');
+      const btn = document.getElementById('refreshBtn');
+      if (refreshing) {
+        if (icon) {
+          icon.style.transform = '';
+          icon.classList.add('rotate-spinning', 'animate-spin');
+        }
+        if (btn) {
+          btn.setAttribute('disabled', 'true');
+          btn.classList.add('opacity-70', 'cursor-not-allowed');
+        }
+      } else {
+        if (icon) {
+          icon.classList.remove('rotate-spinning', 'animate-spin');
+          icon.style.transform = '';
+        }
+        if (btn) {
+          btn.removeAttribute('disabled');
+          btn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+      }
+    }
+
+    async function refreshApp() {
+      if (isRefreshing) return;
+      isRefreshing = true;
+      setRefreshingState(true);
+
+      const minSpinDelay = new Promise(resolve => setTimeout(resolve, 750));
+      try {
+        await Promise.all([loadAllData(), minSpinDelay]);
+      } catch (err) {
+        console.error('Errore durante l\'aggiornamento:', err);
+      } finally {
+        setRefreshingState(false);
+        isRefreshing = false;
+      }
+    }
+
     async function loadAllData() {
       try {
         const resAlert = await fetch('./alert.json', { cache: 'no-store' });
@@ -627,8 +690,191 @@
       }
     });
 
-    // Avvio al caricamento della pagina
-    loadAllData();
+    // -------------------------------------------------------------
+    // 9. PULL-TO-REFRESH (Gesture su mobile & drag su desktop)
+    // -------------------------------------------------------------
+    const PULL_THRESHOLD = 70;
+    let pullStartY = 0;
+    let pullStartX = 0;
+    let pullCurrentDistance = 0;
+    let isPullingGesture = false;
+
+    function isAtScrollTop() {
+      const winTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      const forecastEl = document.getElementById('forecastContainer');
+      const forecastTop = forecastEl ? forecastEl.scrollTop : 0;
+      return winTop <= 2 && forecastTop <= 2;
+    }
+
+    function resetPullState() {
+      const card = document.getElementById('appCard');
+      const indicator = document.getElementById('pullIndicator');
+      const icon = document.getElementById('refreshIcon');
+
+      if (card) {
+        card.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        card.style.transform = '';
+      }
+      if (indicator) {
+        indicator.style.height = '0px';
+        indicator.style.opacity = '0';
+      }
+      if (icon && !isRefreshing) {
+        icon.style.transition = 'transform 0.25s ease-out';
+        icon.style.transform = '';
+      }
+      isPullingGesture = false;
+      pullCurrentDistance = 0;
+      pullStartY = 0;
+    }
+
+    function updatePullVisuals(distance) {
+      const card = document.getElementById('appCard');
+      const indicator = document.getElementById('pullIndicator');
+      const pullText = document.getElementById('pullText');
+      const icon = document.getElementById('refreshIcon');
+
+      const dampedY = Math.min(distance * 0.45, 65);
+      const rotation = Math.min(distance * 3.5, 360);
+
+      if (card) {
+        card.style.transition = 'none';
+        card.style.transform = `translateY(${dampedY}px)`;
+      }
+      if (indicator) {
+        indicator.style.height = `${Math.min(dampedY, 32)}px`;
+        indicator.style.opacity = `${Math.min(dampedY / 30, 1)}`;
+      }
+      if (pullText) {
+        pullText.textContent = distance >= PULL_THRESHOLD 
+          ? 'Rilascia per aggiornare' 
+          : 'Trascina per aggiornare';
+      }
+      if (icon && !isRefreshing) {
+        icon.style.transition = 'none';
+        icon.style.transform = `rotate(${rotation}deg)`;
+      }
+    }
+
+    // Touch events (Mobile / PWA)
+    window.addEventListener('touchstart', (e) => {
+      if (isRefreshing || e.touches.length !== 1) return;
+      if (e.target.closest('#hourSlider, button, a, input, select, textarea')) return;
+
+      if (isAtScrollTop()) {
+        pullStartY = e.touches[0].clientY;
+        pullStartX = e.touches[0].clientX;
+        pullCurrentDistance = 0;
+        isPullingGesture = false;
+      }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (isRefreshing || pullStartY === 0) return;
+      if (e.touches.length !== 1) return;
+
+      const y = e.touches[0].clientY;
+      const x = e.touches[0].clientX;
+      const deltaY = y - pullStartY;
+      const deltaX = x - pullStartX;
+
+      if (!isPullingGesture && Math.abs(deltaX) > Math.abs(deltaY)) {
+        pullStartY = 0;
+        return;
+      }
+
+      if (deltaY > 0 && isAtScrollTop()) {
+        isPullingGesture = true;
+        if (e.cancelable) e.preventDefault();
+        pullCurrentDistance = deltaY;
+        updatePullVisuals(pullCurrentDistance);
+      } else if (deltaY < 0 && isPullingGesture) {
+        resetPullState();
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', async () => {
+      if (isRefreshing || !isPullingGesture) {
+        pullStartY = 0;
+        return;
+      }
+
+      const triggered = pullCurrentDistance >= PULL_THRESHOLD;
+      const card = document.getElementById('appCard');
+      const pullText = document.getElementById('pullText');
+
+      if (triggered) {
+        if (pullText) pullText.textContent = 'Aggiornamento in corso...';
+        if (card) {
+          card.style.transition = 'transform 0.2s ease-out';
+          card.style.transform = 'translateY(32px)';
+        }
+        await refreshApp();
+      }
+      resetPullState();
+    });
+
+    window.addEventListener('touchcancel', resetPullState);
+
+    // Mouse drag events (Desktop / Mac preview)
+    let isMouseDown = false;
+    window.addEventListener('mousedown', (e) => {
+      if (isRefreshing || e.button !== 0) return;
+      if (e.target.closest('#hourSlider, button, a, input, select, textarea, canvas')) return;
+
+      if (isAtScrollTop()) {
+        isMouseDown = true;
+        pullStartY = e.clientY;
+        pullStartX = e.clientX;
+        pullCurrentDistance = 0;
+        isPullingGesture = false;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isMouseDown || isRefreshing || pullStartY === 0) return;
+      const deltaY = e.clientY - pullStartY;
+      const deltaX = e.clientX - pullStartX;
+
+      if (!isPullingGesture && Math.abs(deltaX) > Math.abs(deltaY)) {
+        isMouseDown = false;
+        pullStartY = 0;
+        return;
+      }
+
+      if (deltaY > 5 && isAtScrollTop()) {
+        isPullingGesture = true;
+        pullCurrentDistance = deltaY;
+        updatePullVisuals(pullCurrentDistance);
+      }
+    });
+
+    window.addEventListener('mouseup', async () => {
+      if (!isMouseDown) return;
+      isMouseDown = false;
+
+      if (!isPullingGesture) {
+        pullStartY = 0;
+        return;
+      }
+
+      const triggered = pullCurrentDistance >= PULL_THRESHOLD;
+      const card = document.getElementById('appCard');
+      const pullText = document.getElementById('pullText');
+
+      if (triggered) {
+        if (pullText) pullText.textContent = 'Aggiornamento in corso...';
+        if (card) {
+          card.style.transition = 'transform 0.2s ease-out';
+          card.style.transform = 'translateY(32px)';
+        }
+        await refreshApp();
+      }
+      resetPullState();
+    });
+
+    // Avvio al caricamento della pagina (rotella attiva finché i dati non sono pronti)
+    refreshApp();
   </script>
 </body>
 </html>
