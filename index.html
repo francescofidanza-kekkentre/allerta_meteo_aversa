@@ -107,9 +107,8 @@
 
           <!-- RIQUADRO BLU (SINTESI METEO AVERSA) - VENTO & PIOGGIA -->
           <div class="bg-sky-50/80 border border-sky-200 rounded-2xl p-3.5 space-y-2 text-sky-950">
-            <div class="flex justify-between items-center text-[11px] font-bold text-sky-700 uppercase tracking-wider">
+            <div class="text-[11px] font-bold text-sky-700 uppercase tracking-wider">
               <span>Sintesi Meteo Aversa</span>
-              <span id="weatherSummaryDesc" class="font-medium text-sky-800 normal-case">--</span>
             </div>
             <div class="grid grid-cols-2 gap-2 text-center pt-1">
               <div class="bg-white/80 p-2.5 rounded-xl border border-sky-100">
@@ -499,9 +498,6 @@
       // Valore grande al centro con °C
       document.getElementById('currentTemp').textContent = `${current.temperature_2m.toFixed(1)}°C`;
       document.getElementById('weatherDesc').textContent = weatherInfo.desc;
-      if (document.getElementById('weatherSummaryDesc')) {
-        document.getElementById('weatherSummaryDesc').textContent = weatherInfo.desc;
-      }
 
       // Riquadro blu: Vento e Pioggia
       const windSpeedVal = Math.round(current.wind_speed_10m);
