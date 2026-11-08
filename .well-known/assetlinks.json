@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "io.github.francescofidanza_kekkentre.twa",
-        "sha256_cert_fingerprints": ["71:0A:A8:3F:44:F2:3A:61:8F:46:D0:68:A3:F9:8D:2B:4E:13:BA:7C:00:89:84:DA:12:FC:BD:09:E5:57:24:6C"]
+        "package_name": "dev.pages.allerta_meteo_aversa.twa",
+        "sha256_cert_fingerprints": ["4C:66:FA:40:2F:E1:82:FB:2C:86:84:4F:B6:7B:52:C4:AF:21:05:19:9C:E6:8B:A0:6C:2A:E8:CF:99:91:7D:62"]
       }
     }]
