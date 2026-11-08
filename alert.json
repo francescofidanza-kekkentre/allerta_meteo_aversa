@@ -2,11 +2,11 @@
   "status": "VERDE",
   "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il Bollettino di criticità nazionale della Protezione Civile del 08/11/2026 ore 14:22.",
   "weather_summary": "Parzialmente nuvoloso",
-  "temperature": 17.1,
-  "temp_max": 17.7,
-  "temp_min": 10.4,
-  "wind_speed": 6.3,
+  "temperature": 16.0,
+  "temp_max": 18.0,
+  "temp_min": 10.3,
+  "wind_speed": 5.8,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "08/11/2026, 15:36:12"
+  "updated_at": "08/11/2026, 16:31:06"
 }
