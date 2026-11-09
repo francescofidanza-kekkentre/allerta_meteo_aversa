@@ -4,9 +4,9 @@
   "weather_summary": "Nebbia",
   "temperature": 9.9,
   "temp_max": 17.4,
-  "temp_min": 9.2,
-  "wind_speed": 3.7,
+  "temp_min": 9.3,
+  "wind_speed": 2.9,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "09/11/2026, 00:33:23"
+  "updated_at": "09/11/2026, 01:56:40"
 }
