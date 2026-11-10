@@ -1,9 +1,288 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aversa Meteo & Allerte</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Aversana Meteo & Allerte - macOS Widget</title>
+
+  <!-- PWA Metadata & Manifest -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #cbd5e1 100%);
+      color: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 12px;
+    }
+
+    .widget-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 430px;
+      padding: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    .mac-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .dots { display: flex; gap: 8px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .dot-red { background: #ff5f56; border: 0.5px solid #e0443e; }
+    .dot-yellow { background: #ffbd2e; border: 0.5px solid #dea123; }
+    .dot-green { background: #27c93f; border: 0.5px solid #1aab29; }
+    .widget-title { font-size: 13px; color: #64748b; font-weight: 600; }
+
+    .refresh-btn {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+      outline: none;
+    }
+    .refresh-btn:hover { background: rgba(0, 0, 0, 0.1); }
+    .refresh-btn.spinning { animation: spinAnim 0.8s linear infinite; }
+    @keyframes spinAnim {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .tab-bar {
+      display: flex;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      border-radius: 12px;
+      padding: 3px;
+      margin-bottom: 14px;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .tab-btn {
+      flex: 1 1 0;
+      width: 50%;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      background: transparent;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Sezione Allerta Unificata */
+    .alert-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      color: #334155;
+      text-transform: uppercase;
+    }
+    .update-time-top { font-size: 11px; color: #94a3b8; }
+
+    /* Base Alert Card */
+    .base44-alert-card {
+      display: flex;
+      gap: 10px;
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border: 1px solid transparent;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    /* Classi Dinamiche per Colori Allerta */
+    .alert-card-verde { background: #dcfce7 !important; border-color: #22c55e !important; }
+    .alert-badge-verde { background: #86efac !important; color: #14532d !important; }
+    .alert-text-verde { color: #14532d !important; }
+
+    .alert-card-gialla { background: #fef9c3 !important; border-color: #eab308 !important; }
+    .alert-badge-gialla { background: #fef08a !important; color: #854d0e !important; }
+    .alert-text-gialla { color: #713f12 !important; }
+
+    .alert-card-arancione { background: #ffedd5 !important; border-color: #f97316 !important; }
+    .alert-badge-arancione { background: #fdba74 !important; color: #9a3412 !important; }
+    .alert-text-arancione { color: #431407 !important; }
+
+    .alert-card-rossa { background: #fee2e2 !important; border-color: #ef4444 !important; }
+    .alert-badge-rossa { background: #fca5a5 !important; color: #7f1d1d !important; }
+    .alert-text-rossa { color: #450a0a !important; }
+
+    /* Classi Dinamiche per Scuole */
+    .school-closed { color: #7f1d1d !important; }
+    .school-open { color: #14532d !important; }
+
+    .alert-icon-box {
+      width: 30px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .alert-content { flex: 1; min-width: 0; }
+    .alert-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 3px;
+      line-height: 1.3;
+    }
+    .alert-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    .alert-summary {
+      font-size: 11.5px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .school-status-box {
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Meteo Corrente */
+    .main-temp { text-align: center; margin-bottom: 10px; }
+    .city { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.2px; }
+    .temp-val { font-size: 38px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1.5px; line-height: 1.1; }
+    .condition { font-size: 12px; color: #64748b; text-transform: capitalize; font-weight: 500; }
+
+    /* Metriche Griglia */
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    .stat-label { font-size: 10px; color: #64748b; display: block; margin-bottom: 2px; font-weight: 500; }
+    .stat-val { font-size: 12px; font-weight: 700; color: #1e293b; }
+
+    /* Grafico 24h */
+    .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .chart-box {
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      padding: 8px 6px 4px 6px;
+    }
+    canvas { width: 100% !important; height: 115px !important; display: block; }
+
+    /* Lista Ora per Ora (48h) */
+    .hourly-scroll {
+      height: 410px;
+      overflow-y: auto;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .hourly-scroll::-webkit-scrollbar { width: 5px; }
+    .hourly-scroll::-webkit-scrollbar-track { background: transparent; }
+    .hourly-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
+
+    .day-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0284c7;
+      background: rgba(2, 132, 199, 0.08);
+      padding: 5px 8px;
+      border-radius: 6px;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+
+    .hourly-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+    .hourly-time { font-weight: 600; width: 48px; color: #334155; }
+    .hourly-icon-desc { display: flex; align-items: center; gap: 6px; flex: 1; color: #64748b; font-size: 12px; }
+    .hourly-rain { font-size: 11px; color: #0284c7; font-weight: 600; width: 44px; text-align: right; }
+    .hourly-temp { font-weight: 700; color: #0f172a; width: 32px; text-align: right; }
+
+    /* Pulsanti Azione */
+    .btn-group { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 8px; 
+      margin-top: 14px;
+    }
     
     <!-- Link al manifest standard -->
     <link rel="manifest" href="./manifest.json">
@@ -34,7 +313,19 @@
       }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex justify-center items-start sm:py-6">
+<body>
+
+  <div class="widget-card">
+    <!-- Header Mac con Tasto Refresh -->
+    <div class="mac-header">
+      <div class="dots">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <div class="widget-title">Aversa (CA) • Protezione Civile</div>
+      <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
+    </div>
 
   <!-- Container App Mobile -->
   <div id="appCard" class="w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100 will-change-transform">
@@ -387,10 +678,33 @@
       }
     }
 
-    async function refreshApp() {
-      if (isRefreshing) return;
-      isRefreshing = true;
-      setRefreshingState(true);
+    function loadAlert() {
+      return fetch('./alert.json?v=' + new Date().getTime(), { cache: "no-store" })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var alertCard = document.getElementById('alertCard');
+          var titleEl = document.getElementById('alertTitle');
+          var badgeEl = document.getElementById('alertBadge');
+          var summaryEl = document.getElementById('alertSummary');
+          var schoolEl = document.getElementById('schoolStatus');
+          var iconEl = document.getElementById('alertIcon');
+          var timeEl = document.getElementById('updateTime');
+
+          if (timeEl && data.updated_at) timeEl.textContent = data.updated_at;
+
+          var status = (data.status || '').toUpperCase();
+          var isClosed = data.schools_closed === true;
+
+          // Ripristino classi base per la pulizia dinamica
+          alertCard.className = 'base44-alert-card';
+          badgeEl.className = 'alert-badge';
+          summaryEl.className = 'alert-summary';
+
+          // Gestione dinamica scuole
+          if (schoolEl) {
+            schoolEl.textContent = isClosed ? '🏫 Scuole di Aversa: CHIUSE' : '🏫 Scuole di Aversa: APERTE';
+            schoolEl.className = 'school-status-box ' + (isClosed ? 'school-closed' : 'school-open');
+          }
 
       const minSpinDelay = new Promise(resolve => setTimeout(resolve, 750));
       try {
