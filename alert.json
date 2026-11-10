@@ -1,6 +1,12 @@
 {
-  "status": "GIALLA",
-  "message": "Allerta meteo GIALLA per temporali e locali allagamenti per la Zona 1 (Piana Campana).",
+  "status": "VERDE",
+  "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il Bollettino di criticità nazionale della Protezione Civile del 09/11/2026 ore 14:02.",
+  "weather_summary": "Coperto",
+  "temperature": 16.1,
+  "temp_max": 17.7,
+  "temp_min": 11.7,
+  "wind_speed": 4.2,
   "schools_closed": false,
-  "updated_at": "22/10/2026, 08:57:00"
+  "schools_notice": null,
+  "updated_at": "10/11/2026, 12:38:11"
 }

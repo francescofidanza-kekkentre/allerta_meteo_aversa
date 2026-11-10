@@ -2,8 +2,8 @@ name: Update Weather Alerts
 
 on:
   schedule:
-    # Esegue lo script ogni 3 ore
-    - cron: '0 */3 * * *'
+    # Esegue lo script ogni 30 minuti
+    - cron: '*/30 * * * *'
   # Permette di avviare l'azione manualmente dalla scheda Actions di GitHub
   workflow_dispatch:
 
@@ -26,6 +26,9 @@ jobs:
           pip install requests beautifulsoup4 lxml
 
       - name: Esegui lo script Python
+        env:
+          # Per le chiamate all'API GitHub (bollettino nazionale DPC) senza il limite di 60/ora
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python fetch_alerts.py
 

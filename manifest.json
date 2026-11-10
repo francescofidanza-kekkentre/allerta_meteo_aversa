@@ -1,0 +1,41 @@
+{
+  "id": "aversa-meteo-pwa",
+  "name": "Aversa Meteo & Allerte",
+  "short_name": "Meteo Aversa",
+  "description": "Widget meteo e allerte Protezione Civile Campania per la città di Aversa (Zona 1)",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#f8fafc",
+  "icons": [
+    {
+      "src": "https://wsrv.nl/?url=https://cdn-icons-png.flaticon.com/512/1163/1163661.png&w=192&h=192&output=png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1163/1163661.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1163/1163661.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Meteo e Allerte Aversa Mobile"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1163/1163661.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Meteo e Allerte Aversa Desktop"
+    }
+  ]
+}
