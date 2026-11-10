@@ -2,341 +2,47 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Aversana Meteo & Allerte - macOS Widget</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aversa Meteo & Allerte</title>
 
   <!-- PWA Metadata & Manifest -->
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#f8fafc">
+
+  <!-- Icone & Impostazioni Apple iOS -->
+  <link rel="apple-touch-icon" href="./APPLE_ICON.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1163/1163661.png">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Aversa Meteo">
+
+  <!-- Tailwind CSS & Chart.js -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 50%, #cbd5e1 100%);
-      color: #0f172a;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px 12px;
+    html, body {
+      overscroll-behavior-y: contain;
     }
-
-    .widget-card {
-      background: rgba(255, 255, 255, 0.88);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border: 1px solid rgba(255, 255, 255, 0.95);
-      border-radius: 24px;
-      width: 100%;
-      max-width: 430px;
-      padding: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-      overflow: hidden;
+    @keyframes app-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
-
-    .mac-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
+    .rotate-spinning {
+      animation: app-spin 0.75s linear infinite !important;
     }
-    .dots { display: flex; gap: 8px; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-    .dot-red { background: #ff5f56; border: 0.5px solid #e0443e; }
-    .dot-yellow { background: #ffbd2e; border: 0.5px solid #dea123; }
-    .dot-green { background: #27c93f; border: 0.5px solid #1aab29; }
-    .widget-title { font-size: 13px; color: #64748b; font-weight: 600; }
-
-    .refresh-btn {
-      background: rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background 0.2s;
-      outline: none;
-    }
-    .refresh-btn:hover { background: rgba(0, 0, 0, 0.1); }
-    .refresh-btn.spinning { animation: spinAnim 0.8s linear infinite; }
-    @keyframes spinAnim {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .tab-bar {
-      display: flex;
-      background: rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      border-radius: 12px;
-      padding: 3px;
-      margin-bottom: 14px;
-      gap: 4px;
-      width: 100%;
-    }
-
-    .tab-btn {
-      flex: 1 1 0;
-      width: 50%;
-      padding: 7px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #64748b;
-      background: transparent;
-      border: none;
-      border-radius: 9px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .tab-btn.active {
-      background: #ffffff;
-      color: #0f172a;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
-
-    /* Sezione Allerta Unificata */
-    .alert-section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .section-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.6px;
-      color: #334155;
-      text-transform: uppercase;
-    }
-    .update-time-top { font-size: 11px; color: #94a3b8; }
-
-    /* Base Alert Card */
-    .base44-alert-card {
-      display: flex;
-      gap: 10px;
-      border-radius: 14px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      border: 1px solid transparent;
-      transition: background-color 0.2s ease, border-color 0.2s ease;
-    }
-
-    /* Classi Dinamiche per Colori Allerta */
-    .alert-card-verde { background: #dcfce7 !important; border-color: #22c55e !important; }
-    .alert-badge-verde { background: #86efac !important; color: #14532d !important; }
-    .alert-text-verde { color: #14532d !important; }
-
-    .alert-card-gialla { background: #fef9c3 !important; border-color: #eab308 !important; }
-    .alert-badge-gialla { background: #fef08a !important; color: #854d0e !important; }
-    .alert-text-gialla { color: #713f12 !important; }
-
-    .alert-card-arancione { background: #ffedd5 !important; border-color: #f97316 !important; }
-    .alert-badge-arancione { background: #fdba74 !important; color: #9a3412 !important; }
-    .alert-text-arancione { color: #431407 !important; }
-
-    .alert-card-rossa { background: #fee2e2 !important; border-color: #ef4444 !important; }
-    .alert-badge-rossa { background: #fca5a5 !important; color: #7f1d1d !important; }
-    .alert-text-rossa { color: #450a0a !important; }
-
-    /* Classi Dinamiche per Scuole */
-    .school-closed { color: #7f1d1d !important; }
-    .school-open { color: #14532d !important; }
-
-    .alert-icon-box {
-      width: 30px;
-      height: 30px;
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      flex-shrink: 0;
-    }
-    .alert-content { flex: 1; min-width: 0; }
-    .alert-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 3px;
-      line-height: 1.3;
-    }
-    .alert-badge {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 4px;
-      margin-bottom: 4px;
-    }
-    .alert-summary {
-      font-size: 11.5px;
-      line-height: 1.35;
-      word-break: break-word;
-    }
-
-    .school-status-box {
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px dashed rgba(0, 0, 0, 0.12);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* Meteo Corrente */
-    .main-temp { text-align: center; margin-bottom: 10px; }
-    .city { font-size: 18px; font-weight: 700; color: #0f172a; letter-spacing: -0.2px; }
-    .temp-val { font-size: 38px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -1.5px; line-height: 1.1; }
-    .condition { font-size: 12px; color: #64748b; text-transform: capitalize; font-weight: 500; }
-
-    /* Metriche Griglia */
-    .grid-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .stat-card {
-      background: rgba(255, 255, 255, 0.7);
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      border-radius: 12px;
-      padding: 6px 4px;
-      text-align: center;
-    }
-    .stat-label { font-size: 10px; color: #64748b; display: block; margin-bottom: 2px; font-weight: 500; }
-    .stat-val { font-size: 12px; font-weight: 700; color: #1e293b; }
-
-    /* Grafico 24h */
-    .sec-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .chart-box {
-      background: rgba(255, 255, 255, 0.75);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      border-radius: 16px;
-      padding: 8px 6px 4px 6px;
-    }
-    canvas { width: 100% !important; height: 115px !important; display: block; }
-
-    /* Lista Ora per Ora (48h) */
-    .hourly-scroll {
-      height: 410px;
-      overflow-y: auto;
-      padding-right: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .hourly-scroll::-webkit-scrollbar { width: 5px; }
-    .hourly-scroll::-webkit-scrollbar-track { background: transparent; }
-    .hourly-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 10px; }
-
-    .day-header {
-      font-size: 11px;
-      font-weight: 700;
-      color: #0284c7;
-      background: rgba(2, 132, 199, 0.08);
-      padding: 5px 8px;
-      border-radius: 6px;
-      margin-top: 4px;
-      margin-bottom: 2px;
-    }
-
-    .hourly-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(255, 255, 255, 0.65);
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      border-radius: 10px;
-      padding: 7px 10px;
-      font-size: 12px;
-    }
-    .hourly-time { font-weight: 600; width: 48px; color: #334155; }
-    .hourly-icon-desc { display: flex; align-items: center; gap: 6px; flex: 1; color: #64748b; font-size: 12px; }
-    .hourly-rain { font-size: 11px; color: #0284c7; font-weight: 600; width: 44px; text-align: right; }
-    .hourly-temp { font-weight: 700; color: #0f172a; width: 32px; text-align: right; }
-
-    /* Pulsanti Azione */
-    .btn-group { 
-      display: flex; 
-      flex-direction: column; 
-      gap: 8px; 
-      margin-top: 14px;
-    }
-    
-    <!-- Link al manifest standard -->
-    <link rel="manifest" href="./manifest.json">
-    
-    <!-- TAG SPECIFICI PER APPLE / IOS -->
-    <link rel="apple-touch-icon" href="./APPLE_ICON.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Aversa Meteo">
-    
-    <!-- Tailwind CSS & Chart.js -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-      html, body {
-        overscroll-behavior-y: contain;
-      }
-      @keyframes app-spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-      }
-      .rotate-spinning {
-        animation: app-spin 0.75s linear infinite !important;
-      }
-      #refreshIcon {
-        transform-origin: center center;
-      }
-    </style>
+  </style>
 </head>
-<body>
-
-  <div class="widget-card">
-    <!-- Header Mac con Tasto Refresh -->
-    <div class="mac-header">
-      <div class="dots">
-        <span class="dot dot-red"></span>
-        <span class="dot dot-yellow"></span>
-        <span class="dot dot-green"></span>
-      </div>
-      <div class="widget-title">Aversa (CA) • Protezione Civile</div>
-      <button id="refreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Aggiorna ora">🔄</button>
-    </div>
+<body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex justify-center items-start sm:py-6">
 
   <!-- Container App Mobile -->
   <div id="appCard" class="w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100 will-change-transform">
-    
-    <!-- Pull-to-refresh indicator -->
+
+    <!-- Indicatore Pull-to-refresh -->
     <div id="pullIndicator" class="overflow-hidden transition-all duration-200 text-center text-xs font-semibold text-slate-400 flex items-center justify-center gap-1.5 h-0 opacity-0 pointer-events-none select-none bg-slate-50 border-b border-slate-100">
       <span id="pullText">Trascina per aggiornare</span>
     </div>
 
     <div class="p-5 space-y-4">
-      
+
       <!-- Intestazione superiore -->
       <div class="flex justify-between items-center text-sm font-semibold text-slate-600">
         <span>Allerte Scuole e Meteo - Aversa</span>
@@ -357,19 +63,19 @@
         </button>
       </div>
 
-      <!-- CONTENITORE CON OVERLAY ASSOLUTO E COPERTURA OPACA BIANCA -->
+      <!-- Contenitore Viste -->
       <div class="relative">
-        
+
         <!-- VISTA 1: OGGI & ALLERTA -->
         <div id="viewToday" class="space-y-4">
-          
-          <!-- INTESTAZIONE SEZIONE ALLERTA -->
+
+          <!-- Intestazione Sezione Allerta -->
           <div class="flex justify-between items-center text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5 pt-1">
             <span>ALLERTE IN VIGORE</span>
             <span id="alertUpdatedAt" class="font-normal normal-case text-slate-400">--/--/----, --:--:--</span>
           </div>
 
-          <!-- CARD ALLERTA METEO -->
+          <!-- Card Allerta Meteo -->
           <div id="alertCard" class="p-4 rounded-2xl border transition-all space-y-3 bg-emerald-50/80 border-emerald-300 text-emerald-950">
             <div class="flex items-start gap-3">
               <div id="alertIconContainer" class="p-1.5 bg-white rounded-xl shadow-xs flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
@@ -396,7 +102,7 @@
             <a id="schoolNotice" href="#" target="_blank" rel="noopener" class="hidden block text-[11px] font-medium leading-snug text-red-800 underline underline-offset-2"></a>
           </div>
 
-          <!-- RIQUADRO BLU (SINTESI METEO AVERSA) - VENTO & PIOGGIA -->
+          <!-- Riquadro Blu: Sintesi Meteo (Vento & Pioggia) -->
           <div class="bg-sky-50/80 border border-sky-200 rounded-2xl p-3.5 space-y-2 text-sky-950">
             <div class="text-[11px] font-bold text-sky-700 uppercase tracking-wider">
               <span>Sintesi Meteo Aversa</span>
@@ -413,14 +119,14 @@
             </div>
           </div>
 
-          <!-- VALORE GRANDE AL CENTRO CON °C -->
+          <!-- Temperatura Grande Centrale con Descrizione -->
           <div class="text-center py-1 space-y-0.5">
             <h1 class="text-xl font-bold text-slate-900">Aversa</h1>
             <div id="currentTemp" class="text-6xl font-black tracking-tight text-slate-900">--°C</div>
             <div id="weatherDesc" class="text-sm font-medium text-slate-500">Aggiornamento meteo...</div>
           </div>
 
-          <!-- GRIGLIA STATISTICHE IN BASSO (Umidità e Min/Max) -->
+          <!-- Statistiche in Basso (Umidità e Min/Max) -->
           <div class="grid grid-cols-2 gap-2 text-center">
             <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
               <div class="text-[10px] text-slate-400 font-semibold uppercase">Umidità</div>
@@ -432,7 +138,7 @@
             </div>
           </div>
 
-          <!-- GRAFICO TEMPERATURE 24H CON SLIDER INTERATTIVO -->
+          <!-- Grafico Temperature 24h con Slider Interattivo -->
           <div class="space-y-2">
             <div class="flex justify-between items-center text-[11px] font-bold text-slate-400 tracking-wider uppercase">
               <span>EVOLUZIONE TEMPERATURE (24H)</span>
@@ -441,12 +147,11 @@
             <div class="h-32 w-full bg-slate-50 rounded-2xl p-2 border border-slate-100 relative">
               <canvas id="tempChartCanvas"></canvas>
             </div>
-            <!-- Slider orario fluido per muovere la barra rossa -->
             <div class="px-1 pt-1">
-              <input type="range" id="hourSlider" min="0" max="23" step="1" value="0" 
+              <input type="range" id="hourSlider" min="0" max="23" step="1" value="0"
                      class="w-full accent-red-500 h-1.5 bg-slate-200 rounded-lg cursor-pointer"
-                     oninput="onSliderMove(this.value)" 
-                     onmouseup="onSliderRelease()" 
+                     oninput="onSliderMove(this.value)"
+                     onmouseup="onSliderRelease()"
                      ontouchend="onSliderRelease()">
             </div>
           </div>
@@ -457,7 +162,7 @@
         <div id="viewForecast" class="absolute inset-0 bg-white z-10 flex flex-col space-y-3 hidden">
           <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase shrink-0 pt-1">PREVISIONI ORARIE • PROSSIMI 2 GIORNI</div>
           <div id="forecastContainer" class="flex-1 min-h-0 overflow-y-auto pr-1 space-y-1.5">
-            <!-- Popolato dinamicamente da JS -->
+            <!-- Popolato dinamicamente -->
           </div>
         </div>
 
@@ -465,7 +170,7 @@
 
     </div>
 
-    <!-- PIÈ DI PAGINA & PULSANTI -->
+    <!-- Piè di Pagina & Pulsanti -->
     <div class="p-5 bg-slate-50 border-t border-slate-100 space-y-2 rounded-b-3xl">
       <a href="https://centrofunzionale.regione.campania.it/" target="_blank" rel="noopener" class="w-full py-2.5 px-4 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-100 transition-colors shadow-sm">
         <span>🌐 Portale Protezione Civile Campania</span>
@@ -484,12 +189,105 @@
 
   <!-- SCRIPT LOGICA APPLICAZIONE -->
   <script>
+    // -------------------------------------------------------------
+    // RIFERIMENTI DOM CACHED (OTTIMIZZAZIONE PERFORMANCE)
+    // -------------------------------------------------------------
+    const dom = {
+      appCard: document.getElementById('appCard'),
+      pullIndicator: document.getElementById('pullIndicator'),
+      pullText: document.getElementById('pullText'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      refreshIcon: document.getElementById('refreshIcon'),
+      hourSlider: document.getElementById('hourSlider'),
+      forecastContainer: document.getElementById('forecastContainer'),
+      tabToday: document.getElementById('tabToday'),
+      tabForecast: document.getElementById('tabForecast'),
+      viewToday: document.getElementById('viewToday'),
+      viewForecast: document.getElementById('viewForecast'),
+      alertCard: document.getElementById('alertCard'),
+      alertTitle: document.getElementById('alertTitle'),
+      alertBadge: document.getElementById('alertBadge'),
+      alertMessage: document.getElementById('alertMessage'),
+      alertIcon: document.getElementById('alertIcon'),
+      alertUpdatedAt: document.getElementById('alertUpdatedAt'),
+      schoolStatus: document.getElementById('schoolStatus'),
+      schoolNotice: document.getElementById('schoolNotice'),
+      currentTemp: document.getElementById('currentTemp'),
+      weatherDesc: document.getElementById('weatherDesc'),
+      blueWind: document.getElementById('blueWind'),
+      blueRain: document.getElementById('blueRain'),
+      bottomHumidity: document.getElementById('bottomHumidity'),
+      bottomMinMax: document.getElementById('bottomMinMax'),
+      tempChartCanvas: document.getElementById('tempChartCanvas'),
+      installBtn: document.getElementById('installBtn')
+    };
+
+    // -------------------------------------------------------------
+    // COSTANTI & CONFIGURAZIONI TEMA
+    // -------------------------------------------------------------
+    const ALERT_THEMES = {
+      ROSSA: {
+        card: 'p-4 rounded-2xl border transition-all space-y-3 bg-red-50/80 border-red-300 text-red-950',
+        title: 'Allerta Meteo Rossa',
+        badge: 'Rossa',
+        badgeClass: 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-red-200 text-red-800',
+        icon: '🚨'
+      },
+      ARANCIONE: {
+        card: 'p-4 rounded-2xl border transition-all space-y-3 bg-orange-50/80 border-orange-300 text-orange-950',
+        title: 'Allerta Meteo Arancione',
+        badge: 'Arancione',
+        badgeClass: 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-200 text-orange-800',
+        icon: '📙'
+      },
+      GIALLA: {
+        card: 'p-4 rounded-2xl border transition-all space-y-3 bg-amber-50/80 border-amber-300 text-amber-950',
+        title: 'Allerta Meteo Gialla',
+        badge: 'Gialla',
+        badgeClass: 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-200 text-amber-800',
+        icon: '⚠️'
+      },
+      VERDE: {
+        card: 'p-4 rounded-2xl border transition-all space-y-3 bg-emerald-50/80 border-emerald-300 text-emerald-950',
+        title: 'Nessuna Allerta Meteo in Vigore',
+        badge: 'Verde',
+        badgeClass: 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-200 text-emerald-800',
+        icon: '✅'
+      }
+    };
+
+    const WMO_MAP = {
+      0: { desc: 'Sereno', icon: '☀️' },
+      1: { desc: 'Quasi Sereno', icon: '🌤️' },
+      2: { desc: 'Poco Nuvoloso', icon: '⛅' },
+      3: { desc: 'Coperto', icon: '☁️' },
+      45: { desc: 'Nebbia', icon: '🌫️' },
+      48: { desc: 'Nebbia con brina', icon: '🌫️' },
+      51: { desc: 'Pioviggine leggera', icon: '🌦️' },
+      53: { desc: 'Pioviggine', icon: '🌦️' },
+      55: { desc: 'Pioviggine fitta', icon: '🌧️' },
+      61: { desc: 'Pioggia debole', icon: '🌧️' },
+      63: { desc: 'Pioggia', icon: '🌧️' },
+      65: { desc: 'Pioggia forte', icon: '🌧️' },
+      80: { desc: 'Rovesci', icon: '🌦️' },
+      81: { desc: 'Rovesci intensi', icon: '🌦️' },
+      95: { desc: 'Temporale', icon: '⛈️' }
+    };
+
+    function getWmoWeatherDetails(code) {
+      return WMO_MAP[code] || { desc: 'Variabile', icon: '🌤️' };
+    }
+
+    // -------------------------------------------------------------
+    // VARIABILI DI STATO
+    // -------------------------------------------------------------
     let tempChartInstance = null;
     let deferredPrompt = null;
     let selectedHour = null; // null = orario corrente
+    let isRefreshing = false;
 
     // -------------------------------------------------------------
-    // 1. PLUGIN CHART.JS: Linea verticale, pallino e tooltip temperatura
+    // 1. PLUGIN CHART.JS: Linea verticale, indicatore e tooltip
     // -------------------------------------------------------------
     const currentTimeLinePlugin = {
       id: 'currentTimeLine',
@@ -539,7 +337,7 @@
         ctx.strokeStyle = '#ef4444';
         ctx.stroke();
 
-        // Pallino rosso
+        // Pallino rosso indicatore
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.arc(xPixel, yPixel, 6, 0, 2 * Math.PI);
@@ -549,12 +347,12 @@
         ctx.strokeStyle = '#ffffff';
         ctx.stroke();
 
-        // Se l'utente sta muovendo lo slider, mostra il riquadro con la temperatura puntuale
+        // Tooltip temperatura puntuale su drag dello slider
         if (selectedHour !== null && tempVal !== undefined) {
           const text = `${displayLabel} - ${tempVal.toFixed(1)}°C`;
           ctx.font = 'bold 11px sans-serif';
           const textWidth = ctx.measureText(text).width;
-          
+
           const padding = 6;
           const boxWidth = textWidth + padding * 2;
           const boxHeight = 22;
@@ -581,7 +379,6 @@
       }
     };
 
-    // Gestione dello slider orario
     function onSliderMove(val) {
       selectedHour = parseInt(val, 10);
       if (tempChartInstance) {
@@ -590,121 +387,64 @@
     }
 
     function onSliderRelease() {
-      selectedHour = null; // Ritorna all'orario corrente e nasconde il valore puntuale
+      selectedHour = null;
       if (tempChartInstance) {
         tempChartInstance.draw();
       }
-      // Sincronizza lo slider con l'ora attuale
-      const now = new Date();
-      const slider = document.getElementById('hourSlider');
-      if (slider) slider.value = now.getHours();
+      if (dom.hourSlider) {
+        dom.hourSlider.value = new Date().getHours();
+      }
     }
 
     // -------------------------------------------------------------
-    // 2. MAPPATURA CODICI METEO WMO -> TESTO & ICONA
-    // -------------------------------------------------------------
-    function getWmoWeatherDetails(code) {
-      const map = {
-        0: { desc: 'Sereno', icon: '☀️' },
-        1: { desc: 'Quasi Sereno', icon: '🌤️' },
-        2: { desc: 'Poco Nuvoloso', icon: '⛅' },
-        3: { desc: 'Coperto', icon: '☁️' },
-        45: { desc: 'Nebbia', icon: '🌫️' },
-        48: { desc: 'Nebbia con brina', icon: '🌫️' },
-        51: { desc: 'Pioviggine leggera', icon: '🌦️' },
-        53: { desc: 'Pioviggine', icon: '🌦️' },
-        55: { desc: 'Pioviggine fitta', icon: '🌧️' },
-        61: { desc: 'Pioggia debole', icon: '🌧️' },
-        63: { desc: 'Pioggia', icon: '🌧️' },
-        65: { desc: 'Pioggia forte', icon: '🌧️' },
-        80: { desc: 'Rovesci', icon: '🌦️' },
-        81: { desc: 'Rovesci intensi', icon: '🌦️' },
-        95: { desc: 'Temporale', icon: '⛈️' }
-      };
-      return map[code] || { desc: 'Variabile', icon: '🌤️' };
-    }
-
-    // -------------------------------------------------------------
-    // 3. CAMBIO TAB (Meteo & Allerta / Prossimi 2gg)
+    // 2. GESTIONE TAB
     // -------------------------------------------------------------
     function switchTab(tab) {
-      const btnToday = document.getElementById('tabToday');
-      const btnForecast = document.getElementById('tabForecast');
-      const viewToday = document.getElementById('viewToday');
-      const viewForecast = document.getElementById('viewForecast');
-
       const activeClasses = 'w-full py-2.5 rounded-xl bg-white shadow-sm text-slate-800 font-bold transition-all';
       const inactiveClasses = 'w-full py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-all';
 
       if (tab === 'today') {
-        btnToday.className = activeClasses;
-        btnForecast.className = inactiveClasses;
-        viewToday.classList.remove('invisible', 'pointer-events-none');
-        viewForecast.classList.add('hidden');
+        dom.tabToday.className = activeClasses;
+        dom.tabForecast.className = inactiveClasses;
+        dom.viewToday.classList.remove('invisible', 'pointer-events-none');
+        dom.viewForecast.classList.add('hidden');
       } else {
-        btnForecast.className = activeClasses;
-        btnToday.className = inactiveClasses;
-        viewToday.classList.add('invisible', 'pointer-events-none');
-        viewForecast.classList.remove('hidden');
+        dom.tabForecast.className = activeClasses;
+        dom.tabToday.className = inactiveClasses;
+        dom.viewToday.classList.add('invisible', 'pointer-events-none');
+        dom.viewForecast.classList.remove('hidden');
       }
     }
 
     // -------------------------------------------------------------
-    // 4. CARICAMENTO DATI (alert.json + Open-Meteo per 3 giorni)
+    // 3. STATO REFRESH & CARICAMENTO DATI
     // -------------------------------------------------------------
-    let isRefreshing = false;
-
     function setRefreshingState(refreshing) {
-      const icon = document.getElementById('refreshIcon');
-      const btn = document.getElementById('refreshBtn');
       if (refreshing) {
-        if (icon) {
-          icon.style.transform = '';
-          icon.classList.add('rotate-spinning', 'animate-spin');
+        if (dom.refreshIcon) {
+          dom.refreshIcon.style.transform = '';
+          dom.refreshIcon.classList.add('rotate-spinning');
         }
-        if (btn) {
-          btn.setAttribute('disabled', 'true');
-          btn.classList.add('opacity-70', 'cursor-not-allowed');
+        if (dom.refreshBtn) {
+          dom.refreshBtn.disabled = true;
+          dom.refreshBtn.classList.add('opacity-70', 'cursor-not-allowed');
         }
       } else {
-        if (icon) {
-          icon.classList.remove('rotate-spinning', 'animate-spin');
-          icon.style.transform = '';
+        if (dom.refreshIcon) {
+          dom.refreshIcon.classList.remove('rotate-spinning');
+          dom.refreshIcon.style.transform = '';
         }
-        if (btn) {
-          btn.removeAttribute('disabled');
-          btn.classList.remove('opacity-70', 'cursor-not-allowed');
+        if (dom.refreshBtn) {
+          dom.refreshBtn.disabled = false;
+          dom.refreshBtn.classList.remove('opacity-70', 'cursor-not-allowed');
         }
       }
     }
 
-    function loadAlert() {
-      return fetch('./alert.json?v=' + new Date().getTime(), { cache: "no-store" })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          var alertCard = document.getElementById('alertCard');
-          var titleEl = document.getElementById('alertTitle');
-          var badgeEl = document.getElementById('alertBadge');
-          var summaryEl = document.getElementById('alertSummary');
-          var schoolEl = document.getElementById('schoolStatus');
-          var iconEl = document.getElementById('alertIcon');
-          var timeEl = document.getElementById('updateTime');
-
-          if (timeEl && data.updated_at) timeEl.textContent = data.updated_at;
-
-          var status = (data.status || '').toUpperCase();
-          var isClosed = data.schools_closed === true;
-
-          // Ripristino classi base per la pulizia dinamica
-          alertCard.className = 'base44-alert-card';
-          badgeEl.className = 'alert-badge';
-          summaryEl.className = 'alert-summary';
-
-          // Gestione dinamica scuole
-          if (schoolEl) {
-            schoolEl.textContent = isClosed ? '🏫 Scuole di Aversa: CHIUSE' : '🏫 Scuole di Aversa: APERTE';
-            schoolEl.className = 'school-status-box ' + (isClosed ? 'school-closed' : 'school-open');
-          }
+    async function refreshApp() {
+      if (isRefreshing) return;
+      isRefreshing = true;
+      setRefreshingState(true);
 
       const minSpinDelay = new Promise(resolve => setTimeout(resolve, 750));
       try {
@@ -725,7 +465,7 @@
           renderAlertUI(alertData);
         }
       } catch (err) {
-        console.error('Errore durante il caricamento di alert.json:', err);
+        console.error('Errore caricamento alert.json:', err);
       }
 
       try {
@@ -736,108 +476,75 @@
           renderWeatherUI(meteoData);
         }
       } catch (err) {
-        console.error('Errore durante il caricamento dei dati Open-Meteo:', err);
+        console.error('Errore caricamento Open-Meteo:', err);
       }
     }
 
     // -------------------------------------------------------------
-    // 5. RENDERING BANNER ALLERTA
+    // 4. RENDERING BANNER ALLERTA
     // -------------------------------------------------------------
     function renderAlertUI(data) {
-      const card = document.getElementById('alertCard');
-      const title = document.getElementById('alertTitle');
-      const badge = document.getElementById('alertBadge');
-      const message = document.getElementById('alertMessage');
-      const icon = document.getElementById('alertIcon');
-      const updated = document.getElementById('alertUpdatedAt');
-      const schoolStatus = document.getElementById('schoolStatus');
-
-      updated.textContent = data.updated_at || '';
-      message.textContent = data.message || 'Nessun messaggio disponibile.';
+      dom.alertUpdatedAt.textContent = data.updated_at || '';
+      dom.alertMessage.textContent = data.message || 'Nessun messaggio disponibile.';
 
       if (data.schools_closed) {
-        schoolStatus.textContent = 'CHIUSE';
-        schoolStatus.className = 'font-black text-red-700';
+        dom.schoolStatus.textContent = 'CHIUSE';
+        dom.schoolStatus.className = 'font-black text-red-700';
       } else {
-        schoolStatus.textContent = 'APERTE';
-        schoolStatus.className = 'font-black text-emerald-900';
+        dom.schoolStatus.textContent = 'APERTE';
+        dom.schoolStatus.className = 'font-black text-emerald-900';
       }
 
-      // Riferimento all'atto ufficiale del Comune (ordinanza/avviso) con link
-      const schoolNotice = document.getElementById('schoolNotice');
+      // Avviso/ordinanza ufficiale del Comune
       if (data.schools_closed && data.schools_notice && data.schools_notice.text) {
-        schoolNotice.textContent = data.schools_notice.text;
-        schoolNotice.href = data.schools_notice.url || '#';
-        schoolNotice.classList.remove('hidden');
+        dom.schoolNotice.textContent = data.schools_notice.text;
+        dom.schoolNotice.href = data.schools_notice.url || '#';
+        dom.schoolNotice.classList.remove('hidden');
       } else {
-        schoolNotice.classList.add('hidden');
+        dom.schoolNotice.classList.add('hidden');
       }
 
       const status = (data.status || 'VERDE').toUpperCase();
-      if (status === 'ROSSA') {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-red-50/80 border-red-300 text-red-950';
-        title.textContent = 'Allerta Meteo Rossa';
-        badge.textContent = 'Rossa';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-red-200 text-red-800';
-        icon.textContent = '🚨';
-      } else if (status === 'ARANCIONE') {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-orange-50/80 border-orange-300 text-orange-950';
-        title.textContent = 'Allerta Meteo Arancione';
-        badge.textContent = 'Arancione';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-200 text-orange-800';
-        icon.textContent = '📙';
-      } else if (status === 'GIALLA') {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-amber-50/80 border-amber-300 text-amber-950';
-        title.textContent = 'Allerta Meteo Gialla';
-        badge.textContent = 'Gialla';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-200 text-amber-800';
-        icon.textContent = '⚠️';
-      } else {
-        card.className = 'p-4 rounded-2xl border transition-all space-y-3 bg-emerald-50/80 border-emerald-300 text-emerald-950';
-        title.textContent = 'Nessuna Allerta Meteo in Vigore';
-        badge.textContent = 'Verde';
-        badge.className = 'inline-block px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-200 text-emerald-800';
-        icon.textContent = '✅';
-      }
+      const theme = ALERT_THEMES[status] || ALERT_THEMES.VERDE;
+      dom.alertCard.className = theme.card;
+      dom.alertTitle.textContent = theme.title;
+      dom.alertBadge.textContent = theme.badge;
+      dom.alertBadge.className = theme.badgeClass;
+      dom.alertIcon.textContent = theme.icon;
     }
 
     // -------------------------------------------------------------
-    // 6. RENDERING METEO & GRAFICO TEMPERATURE
+    // 5. RENDERING METEO & GRAFICO TEMPERATURE
     // -------------------------------------------------------------
     function renderWeatherUI(data) {
       const current = data.current;
       const daily = data.daily;
       const weatherInfo = getWmoWeatherDetails(current.weather_code);
 
-      // Valore grande al centro con °C
-      document.getElementById('currentTemp').textContent = `${current.temperature_2m.toFixed(1)}°C`;
-      document.getElementById('weatherDesc').textContent = weatherInfo.desc;
+      // Valore centrale grande
+      dom.currentTemp.textContent = `${current.temperature_2m.toFixed(1)}°C`;
+      dom.weatherDesc.textContent = weatherInfo.desc;
 
-      // Riquadro blu: Vento e Pioggia
-      const windSpeedVal = Math.round(current.wind_speed_10m);
-      const rainTodayVal = daily?.rain_sum?.[0] ?? 0;
-      
-      document.getElementById('blueWind').textContent = `${windSpeedVal} km/h`;
-      document.getElementById('blueRain').textContent = `${rainTodayVal} mm`;
+      // Riquadro Blu: Vento e Pioggia
+      dom.blueWind.textContent = `${Math.round(current.wind_speed_10m)} km/h`;
+      dom.blueRain.textContent = `${daily?.rain_sum?.[0] ?? 0} mm`;
 
-      // Griglia in basso: Umidità e Min/Max
-      const humidityVal = current.relative_humidity_2m;
+      // Statistiche inferiori: Umidità e Min/Max
       const minTemp = daily?.temperature_2m_min?.[0] !== undefined ? Math.round(daily.temperature_2m_min[0]) : '--';
       const maxTemp = daily?.temperature_2m_max?.[0] !== undefined ? Math.round(daily.temperature_2m_max[0]) : '--';
+      dom.bottomHumidity.textContent = `${current.relative_humidity_2m} %`;
+      dom.bottomMinMax.textContent = `${minTemp}° / ${maxTemp}°`;
 
-      document.getElementById('bottomHumidity').textContent = `${humidityVal} %`;
-      document.getElementById('bottomMinMax').textContent = `${minTemp}° / ${maxTemp}°`;
-
-      // Imposta lo slider sull'ora corrente all'avvio
-      const now = new Date();
-      const slider = document.getElementById('hourSlider');
-      if (slider) slider.value = now.getHours();
+      // Sincronizza lo slider sull'ora corrente
+      if (dom.hourSlider) {
+        dom.hourSlider.value = new Date().getHours();
+      }
 
       // Grafico prime 24 ore (Oggi)
       const hourlyTemps = data.hourly.temperature_2m.slice(0, 24);
       const hoursLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
 
-      const ctx = document.getElementById('tempChartCanvas').getContext('2d');
+      const ctx = dom.tempChartCanvas.getContext('2d');
       if (tempChartInstance) {
         tempChartInstance.destroy();
       }
@@ -877,21 +584,17 @@
         plugins: [currentTimeLinePlugin]
       });
 
-      // Rendering Lista Oraria verticale con Vento
       renderForecastList(data.hourly);
     }
 
     // -------------------------------------------------------------
-    // 7. RENDERING LISTA ORARIA VERTICALE (Con Vento)
+    // 6. RENDERING LISTA ORARIA VERTICALE (36H con DocumentFragment)
     // -------------------------------------------------------------
     function renderForecastList(hourly) {
-      const container = document.getElementById('forecastContainer');
-      container.innerHTML = '';
-
+      dom.forecastContainer.innerHTML = '';
       if (!hourly || !hourly.time) return;
 
       const now = new Date();
-      
       let startIndex = 0;
       for (let i = 0; i < hourly.time.length; i++) {
         const itemDate = new Date(hourly.time[i]);
@@ -903,33 +606,30 @@
 
       const totalHoursToShow = 36;
       const endIndex = Math.min(hourly.time.length, startIndex + totalHoursToShow);
-
       let currentDayGroup = '';
 
-      for (let i = startIndex; i < endIndex; i++) {
-        const timeStr = hourly.time[i];
-        const dateObj = new Date(timeStr);
+      const fragment = document.createDocumentFragment();
 
+      for (let i = startIndex; i < endIndex; i++) {
+        const dateObj = new Date(hourly.time[i]);
         const dayName = dateObj.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
         const hourStr = dateObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
 
-        const code = hourly.weather_code[i];
-        const info = getWmoWeatherDetails(code);
+        const info = getWmoWeatherDetails(hourly.weather_code[i]);
         const temp = Math.round(hourly.temperature_2m[i]);
         const pop = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
         const wind = hourly.wind_speed_10m ? Math.round(hourly.wind_speed_10m[i]) : 0;
 
         if (dayName !== currentDayGroup) {
           currentDayGroup = dayName;
-
           const dayHeader = document.createElement('div');
           dayHeader.className = 'bg-sky-50 text-sky-700 font-bold px-3 py-2 rounded-xl text-xs uppercase tracking-wide mt-3 mb-1.5';
           dayHeader.textContent = dayName;
-          container.appendChild(dayHeader);
+          fragment.appendChild(dayHeader);
         }
 
         const row = document.createElement('div');
-        row.className = 'bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between text-xs mb-1.5 shadow-2xs';
+        row.className = 'bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between text-xs mb-1.5 shadow-xs';
         row.innerHTML = `
           <div class="flex items-center gap-3">
             <span class="font-bold text-slate-800 w-11">${hourStr}</span>
@@ -944,12 +644,14 @@
             <span class="font-bold text-slate-800 text-sm w-8 text-right">${temp}°</span>
           </div>
         `;
-        container.appendChild(row);
+        fragment.appendChild(row);
       }
+
+      dom.forecastContainer.appendChild(fragment);
     }
 
     // -------------------------------------------------------------
-    // 8. REGISTRAZIONE SERVICE WORKER & PROMPT INSTALLAZIONE PWA
+    // 7. SERVICE WORKER & AGGIORNAMENTO AUTOMATICO
     // -------------------------------------------------------------
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -959,18 +661,17 @@
       });
     }
 
-    // Quando l'app torna in primo piano (es. PWA ripresa dallo sfondo senza
-    // ricaricare), controlla se il frontend è cambiato e in quel caso ricarica.
     let frontendVersion = null;
     async function getFrontendVersion() {
       try {
         const res = await fetch('./index.html', { method: 'HEAD', cache: 'no-cache' });
         return res.headers.get('etag') || res.headers.get('last-modified');
       } catch (err) {
-        return null; // offline: nessun controllo
+        return null;
       }
     }
     getFrontendVersion().then(v => { frontendVersion = v; });
+
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState !== 'visible') return;
       navigator.serviceWorker?.getRegistration().then(reg => reg && reg.update());
@@ -982,56 +683,54 @@
       }
     });
 
-    const installBtn = document.getElementById('installBtn');
+    // Installazione PWA
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      installBtn.classList.remove('hidden');
+      if (dom.installBtn) dom.installBtn.classList.remove('hidden');
     });
 
-    installBtn.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          installBtn.classList.add('hidden');
+    if (dom.installBtn) {
+      dom.installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            dom.installBtn.classList.add('hidden');
+          }
+          deferredPrompt = null;
         }
-        deferredPrompt = null;
-      }
-    });
+      });
+    }
 
     // -------------------------------------------------------------
-    // 9. PULL-TO-REFRESH (Gesture su mobile & drag su desktop)
+    // 8. PULL-TO-REFRESH (Gesture Mobile & Drag Desktop)
     // -------------------------------------------------------------
     const PULL_THRESHOLD = 70;
     let pullStartY = 0;
     let pullStartX = 0;
     let pullCurrentDistance = 0;
     let isPullingGesture = false;
+    let isMouseDown = false;
 
     function isAtScrollTop() {
       const winTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
-      const forecastEl = document.getElementById('forecastContainer');
-      const forecastTop = forecastEl ? forecastEl.scrollTop : 0;
+      const forecastTop = dom.forecastContainer ? dom.forecastContainer.scrollTop : 0;
       return winTop <= 2 && forecastTop <= 2;
     }
 
     function resetPullState() {
-      const card = document.getElementById('appCard');
-      const indicator = document.getElementById('pullIndicator');
-      const icon = document.getElementById('refreshIcon');
-
-      if (card) {
-        card.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
-        card.style.transform = '';
+      if (dom.appCard) {
+        dom.appCard.style.transition = 'transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)';
+        dom.appCard.style.transform = '';
       }
-      if (indicator) {
-        indicator.style.height = '0px';
-        indicator.style.opacity = '0';
+      if (dom.pullIndicator) {
+        dom.pullIndicator.style.height = '0px';
+        dom.pullIndicator.style.opacity = '0';
       }
-      if (icon && !isRefreshing) {
-        icon.style.transition = 'transform 0.25s ease-out';
-        icon.style.transform = '';
+      if (dom.refreshIcon && !isRefreshing) {
+        dom.refreshIcon.style.transition = 'transform 0.25s ease-out';
+        dom.refreshIcon.style.transform = '';
       }
       isPullingGesture = false;
       pullCurrentDistance = 0;
@@ -1039,31 +738,39 @@
     }
 
     function updatePullVisuals(distance) {
-      const card = document.getElementById('appCard');
-      const indicator = document.getElementById('pullIndicator');
-      const pullText = document.getElementById('pullText');
-      const icon = document.getElementById('refreshIcon');
-
       const dampedY = Math.min(distance * 0.45, 65);
       const rotation = Math.min(distance * 3.5, 360);
 
-      if (card) {
-        card.style.transition = 'none';
-        card.style.transform = `translateY(${dampedY}px)`;
+      if (dom.appCard) {
+        dom.appCard.style.transition = 'none';
+        dom.appCard.style.transform = `translateY(${dampedY}px)`;
       }
-      if (indicator) {
-        indicator.style.height = `${Math.min(dampedY, 32)}px`;
-        indicator.style.opacity = `${Math.min(dampedY / 30, 1)}`;
+      if (dom.pullIndicator) {
+        dom.pullIndicator.style.height = `${Math.min(dampedY, 32)}px`;
+        dom.pullIndicator.style.opacity = `${Math.min(dampedY / 30, 1)}`;
       }
-      if (pullText) {
-        pullText.textContent = distance >= PULL_THRESHOLD 
+      if (dom.pullText) {
+        dom.pullText.textContent = distance >= PULL_THRESHOLD 
           ? 'Rilascia per aggiornare' 
           : 'Trascina per aggiornare';
       }
-      if (icon && !isRefreshing) {
-        icon.style.transition = 'none';
-        icon.style.transform = `rotate(${rotation}deg)`;
+      if (dom.refreshIcon && !isRefreshing) {
+        dom.refreshIcon.style.transition = 'none';
+        dom.refreshIcon.style.transform = `rotate(${rotation}deg)`;
       }
+    }
+
+    async function handlePullEnd() {
+      const triggered = pullCurrentDistance >= PULL_THRESHOLD;
+      if (triggered) {
+        if (dom.pullText) dom.pullText.textContent = 'Aggiornamento in corso...';
+        if (dom.appCard) {
+          dom.appCard.style.transition = 'transform 0.2s ease-out';
+          dom.appCard.style.transform = 'translateY(32px)';
+        }
+        await refreshApp();
+      }
+      resetPullState();
     }
 
     // Touch events (Mobile / PWA)
@@ -1108,26 +815,12 @@
         pullStartY = 0;
         return;
       }
-
-      const triggered = pullCurrentDistance >= PULL_THRESHOLD;
-      const card = document.getElementById('appCard');
-      const pullText = document.getElementById('pullText');
-
-      if (triggered) {
-        if (pullText) pullText.textContent = 'Aggiornamento in corso...';
-        if (card) {
-          card.style.transition = 'transform 0.2s ease-out';
-          card.style.transform = 'translateY(32px)';
-        }
-        await refreshApp();
-      }
-      resetPullState();
+      await handlePullEnd();
     });
 
     window.addEventListener('touchcancel', resetPullState);
 
-    // Mouse drag events (Desktop / Mac preview)
-    let isMouseDown = false;
+    // Mouse drag events (Desktop)
     window.addEventListener('mousedown', (e) => {
       if (isRefreshing || e.button !== 0) return;
       if (e.target.closest('#hourSlider, button, a, input, select, textarea, canvas')) return;
@@ -1167,23 +860,10 @@
         pullStartY = 0;
         return;
       }
-
-      const triggered = pullCurrentDistance >= PULL_THRESHOLD;
-      const card = document.getElementById('appCard');
-      const pullText = document.getElementById('pullText');
-
-      if (triggered) {
-        if (pullText) pullText.textContent = 'Aggiornamento in corso...';
-        if (card) {
-          card.style.transition = 'transform 0.2s ease-out';
-          card.style.transform = 'translateY(32px)';
-        }
-        await refreshApp();
-      }
-      resetPullState();
+      await handlePullEnd();
     });
 
-    // Avvio al caricamento della pagina (rotella attiva finché i dati non sono pronti)
+    // Avvio al caricamento della pagina
     refreshApp();
   </script>
 </body>
