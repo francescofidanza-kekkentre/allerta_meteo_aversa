@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informativa sulla Privacy - Aversa Meteo & Allerte</title>
+  
+  <!-- Tailwind CSS per uno stile coerente e moderno -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 antialiased font-sans flex justify-center py-8 px-4 sm:px-6">
+
+  <div class="max-w-2xl w-full bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-10 space-y-6">
+    
+    <!-- Intestazione -->
+    <div class="border-b border-slate-100 pb-5">
+      <div class="inline-block px-3 py-1 bg-sky-50 text-sky-700 text-xs font-bold rounded-full mb-3 uppercase tracking-wider">
+        Informativa sulla Privacy
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+        Aversa Meteo & Allerte
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">Ultimo aggiornamento: 10 Novembre 2026</p>
+    </div>
+
+    <!-- Introduzione -->
+    <section class="space-y-2 text-sm text-slate-600 leading-relaxed">
+      <p>
+        La presente Informativa sulla Privacy descrive le modalità con cui l'applicazione <strong>Aversa Meteo & Allerte</strong> (di seguito "l'Applicazione") tratta e tutela i dati degli utenti in conformità al Regolamento Generale sulla Protezione dei Dati (GDPR - UE 2016/679) e alle linee guida per gli sviluppatori di Google Play.
+      </p>
+      <p>
+        La nostra priorità è garantire la massima riservatezza: l'Applicazione è concepita per fornire informazioni meteorologiche e allerte di pubblica utilità senza profilare, raccogliere o rivendere dati personali degli utenti.
+      </p>
+    </section>
+
+    <!-- 1. Dati Personali Raccolti -->
+    <section class="space-y-2">
+      <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <span>🔒</span> 1. Tipologia di Dati Trattati
+      </h2>
+      <ul class="list-disc list-inside space-y-1.5 text-sm text-slate-600 leading-relaxed pl-2">
+        <li>
+          <strong>Nessun dato personale identificativo:</strong> L'Applicazione non richiede la creazione di un account né richiede l'inserimento di nome, cognome, indirizzo email o numero di telefono per la consultazione del meteo e delle allerte.
+        </li>
+        <li>
+          <strong>Nessun tracciamento della posizione GPS:</strong> L'Applicazione fornisce esclusivamente previsioni e bollettini circoscritti al territorio della città di Aversa (CE) e della Zona 1 della Protezione Civile Campania. Pertanto, l'Applicazione <em>non richiede né accede alla posizione geografica GPS o precisa</em> del dispositivo.
+        </li>
+        <li>
+          <strong>Memoria locale del dispositivo (LocalStorage):</strong> L'Applicazione memorizza unicamente sul dispositivo dell'utente un token tecnico necessario a verificare la licenza d'acquisto ufficiale. Questo dato rimane confinato all'interno del dispositivo e non viene inviato a server di profilazione esterni.
+        </li>
+      </ul>
+    </section>
+
+    <!-- 2. Servizi di Terze Parti -->
+    <section class="space-y-2">
+      <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <span>🌐</span> 2. Servizi e Risorse di Terze Parti
+      </h2>
+      <p class="text-sm text-slate-600 leading-relaxed">
+        Per il corretto funzionamento delle previsioni e delle allerte, l'Applicazione si interfaccia con le seguenti fonti terze affidabili:
+      </p>
+      <ul class="list-disc list-inside space-y-1.5 text-sm text-slate-600 leading-relaxed pl-2">
+        <li>
+          <strong>Open-Meteo API:</strong> Utilizzato per il recupero delle previsioni meteorologiche e orarie con coordinate preimpostate su Aversa. Nessun dato identificativo dell'utente viene condiviso con Open-Meteo.
+        </li>
+        <li>
+          <strong>Centro Funzionale Multirischi - Protezione Civile Campania:</strong> Fonte ufficiale da cui vengono desunti i bollettini di allerta meteo e le criticità idrogeologiche di pubblico dominio per la Zona 1.
+        </li>
+        <li>
+          <strong>Google Play Store & Servizi Google:</strong> La distribuzione e la gestione dell'acquisto dell'Applicazione sono gestite direttamente da Google Ireland Limited conformemente alle <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="text-sky-600 underline font-medium">Norme sulla Privacy di Google</a>.
+        </li>
+        <li>
+          <strong>Infrastruttura di Hosting (Cloudflare & GitHub):</strong> L'Applicazione è ospitata su infrastrutture cloud sicure con connessione crittografata HTTPS/TLS.
+        </li>
+      </ul>
+    </section>
+
+    <!-- 3. Finalità del Trattamento -->
+    <section class="space-y-2">
+      <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <span>🎯</span> 3. Finalità del Trattamento
+      </h2>
+      <p class="text-sm text-slate-600 leading-relaxed">
+        I pochi dati tecnici utilizzati (chiave di licenza e preferenze d'uso) sono trattati unicamente per:
+      </p>
+      <ul class="list-disc list-inside space-y-1 text-sm text-slate-600 leading-relaxed pl-2">
+        <li>Garantire l'accesso alle funzionalità dell'Applicazione agli utenti acquirenti;</li>
+        <li>Consentire il funzionamento offline della PWA tramite Service Worker;</li>
+        <li>Mantenere aggiornati i bollettini meteo e le allerte di sicurezza civile.</li>
+      </ul>
+    </section>
+
+    <!-- 4. Privacy dei Minori -->
+    <section class="space-y-2">
+      <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <span>👶</span> 4. Tutela dei Minori
+      </h2>
+      <p class="text-sm text-slate-600 leading-relaxed">
+        L'Applicazione non raccoglie consapevolmente dati personali appartenenti a minori di 13 anni (o di età inferiore stabilita dalla legge locale). Poiché non viene effettuata alcuna raccolta dati, l'Applicazione è sicura per la consultazione da parte di tutta la famiglia.
+      </p>
+    </section>
+
+    <!-- 5. Diritti dell'Utente -->
+    <section class="space-y-2">
+      <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <span>⚖️</span> 5. Diritti dell'Interessato (GDPR)
+      </h2>
+      <p class="text-sm text-slate-600 leading-relaxed">
+        In qualunque momento l'utente può cancellare i dati memorizzati localmente (cache e licenza) semplicemente disinstallando l'applicazione dal dispositivo o cancellando i dati dell'app dalle impostazioni del sistema operativo Android.
+      </p>
+    </section>
+
+    <!-- 6. Contatti -->
+    <section class="space-y-2 pt-2 border-t border-slate-100">
+      <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+        <span>📩</span> 6. Contatti e Assistenza
+      </h2>
+      <p class="text-sm text-slate-600 leading-relaxed">
+        Per qualsiasi domanda, chiarimento o richiesta riguardante la presente Informativa sulla Privacy o il funzionamento dell'Applicazione, è possibile contattare lo sviluppatore all'indirizzo email:
+      </p>
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800">
+        Email di contatto: <a href="mailto:francesco.fidanza@gmail.com" class="text-sky-600 font-bold underline">francesco.fidanza@gmail.com</a>
+      </div>
+    </section>
+
+    <!-- Footer link -->
+    <div class="pt-4 text-center border-t border-slate-100">
+      <a href="./" class="text-xs font-bold text-sky-600 hover:text-sky-700 underline">
+        ← Torna all'Applicazione
+      </a>
+    </div>
+
+  </div>
+
+</body>
+</html>
