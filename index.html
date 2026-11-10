@@ -33,8 +33,85 @@
 </head>
 <body class="bg-slate-100 min-h-screen font-sans text-slate-800 flex justify-center items-start sm:py-6">
 
-  <!-- Container App Mobile -->
-  <div id="appCard" class="w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100 will-change-transform">
+  <!-- ============================================================= -->
+  <!-- 1. SCHERMATA PAYWALL / BLOCCO BROWSER WEB NON AUTORIZZATO     -->
+  <!-- ============================================================= -->
+  <div id="paywallCard" class="hidden w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100 p-6 space-y-6">
+    <div class="space-y-6 text-center pt-4">
+      
+      <!-- Icona App -->
+      <div class="inline-flex p-4 bg-sky-50 rounded-3xl border border-sky-100 shadow-sm">
+        <img src="./APPLE_ICON.png" alt="Aversa Meteo Icon" class="w-20 h-20 rounded-2xl shadow-xs object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1163/1163661.png'">
+      </div>
+
+      <div class="space-y-1">
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">Aversa Meteo & Allerte</h1>
+        <p class="text-xs font-bold text-sky-600 uppercase tracking-wider">Applicazione Ufficiale</p>
+      </div>
+
+      <p class="text-xs text-slate-500 leading-relaxed px-2">
+        Questa applicazione è disponibile esclusivamente per chi ha acquistato la versione ufficiale sul Google Play Store.
+      </p>
+
+      <!-- Vantaggi inclusi nell'App -->
+      <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-left space-y-3.5">
+        <div class="flex items-start gap-3">
+          <span class="text-lg shrink-0">🚨</span>
+          <div class="text-xs">
+            <div class="font-bold text-slate-800">Allerte Protezione Civile</div>
+            <div class="text-slate-500 leading-snug">Bollettini ufficiali in tempo reale per la Zona 1 (Aversa e agro aversano).</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-lg shrink-0">🏫</span>
+          <div class="text-xs">
+            <div class="font-bold text-slate-800">Stato Scuole ad Aversa</div>
+            <div class="text-slate-500 leading-snug">Notifica immediata di chiusure e ordinanze del Sindaco.</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-lg shrink-0">📈</span>
+          <div class="text-xs">
+            <div class="font-bold text-slate-800">Previsioni Orarie & Slider 24H</div>
+            <div class="text-slate-500 leading-snug">Grafico interattivo, velocità del vento e probabilità di pioggia a 48 ore.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-3 pt-2">
+      <!-- Pulsante Acquisto Play Store -->
+      <a id="playStoreLink" href="https://play.google.com/store/apps/details?id=dev.pages.allerta_meteo_aversa.twa" target="_blank" rel="noopener" class="w-full py-3.5 px-5 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-sm shadow-md hover:bg-slate-800 active:scale-[0.98] transition-all">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M3.609 1.814L13.792 12 3.61 22.186a2.023 2.023 0 0 1-.61-1.458V3.272c0-.558.225-1.077.609-1.458zm11.235 11.238l2.585 2.585-11.83 6.812 9.245-9.397zm0-2.104L5.599 1.551l11.83 6.812-2.585 2.585zm1.47 1.052l4.032 2.321c1.173.675 1.173 1.776 0 2.451l-4.032 2.321-2.223-2.223 2.223-2.87z"/>
+        </svg>
+        <span>Acquista su Google Play</span>
+      </a>
+
+      <!-- Sblocco manuale licenza (per acquirenti / test) -->
+      <div class="text-center pt-1">
+        <button onclick="toggleManualUnlock()" class="text-[11px] text-slate-400 hover:text-slate-600 underline cursor-pointer">
+          Hai già acquistato o hai un codice licenza?
+        </button>
+        <div id="manualUnlockBox" class="hidden mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+          <input type="text" id="manualLicenseInput" placeholder="Inserisci il codice licenza" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg text-center font-mono">
+          <button onclick="submitManualLicense()" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer">
+            Verifica Licenza
+          </button>
+          <div id="licenseError" class="hidden text-[11px] text-red-600 font-semibold">Codice licenza non valido.</div>
+        </div>
+      </div>
+
+      <div class="text-center text-[10px] text-slate-400">
+        Aversa (CE) • Protezione Civile Campania Zona 1
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- 2. CONTAINER APP MOBILE (ACCESSIBILE SOLO CON LICENZA ATTIVA)  -->
+  <!-- ============================================================= -->
+  <div id="appCard" class="hidden w-full max-w-md bg-white sm:rounded-3xl shadow-xl min-h-screen sm:min-h-0 flex flex-col justify-between overflow-hidden border border-slate-100 will-change-transform">
 
     <!-- Indicatore Pull-to-refresh -->
     <div id="pullIndicator" class="overflow-hidden transition-all duration-200 text-center text-xs font-semibold text-slate-400 flex items-center justify-center gap-1.5 h-0 opacity-0 pointer-events-none select-none bg-slate-50 border-b border-slate-100">
@@ -190,9 +267,15 @@
   <!-- SCRIPT LOGICA APPLICAZIONE -->
   <script>
     // -------------------------------------------------------------
+    // CHIAVE DI LICENZA (CONFIGURABILE PER L'APP GOOGLE PLAY)
+    // -------------------------------------------------------------
+    const APP_LICENSE_SECRET = 'aversa_lic_playstore_2026';
+
+    // -------------------------------------------------------------
     // RIFERIMENTI DOM CACHED (OTTIMIZZAZIONE PERFORMANCE)
     // -------------------------------------------------------------
     const dom = {
+      paywallCard: document.getElementById('paywallCard'),
       appCard: document.getElementById('appCard'),
       pullIndicator: document.getElementById('pullIndicator'),
       pullText: document.getElementById('pullText'),
@@ -221,6 +304,56 @@
       tempChartCanvas: document.getElementById('tempChartCanvas'),
       installBtn: document.getElementById('installBtn')
     };
+
+    // -------------------------------------------------------------
+    // GESTIONE AUTENTICAZIONE LICENZA & GATEKEEPER
+    // -------------------------------------------------------------
+    function isLicenseValid() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get('app_license') || urlParams.get('license');
+
+      // 1. Se fornito tramite URL dall'App Android
+      if (urlToken && urlToken === APP_LICENSE_SECRET) {
+        localStorage.setItem('aversa_app_license', urlToken);
+        // Pulizia dell'URL nella barra indirizzi per sicurezza ed eleganza
+        history.replaceState({}, document.title, window.location.pathname);
+        return true;
+      }
+
+      // 2. Se già sbloccato e memorizzato in precedenza nel dispositivo
+      const storedToken = localStorage.getItem('aversa_app_license');
+      return storedToken === APP_LICENSE_SECRET;
+    }
+
+    function toggleManualUnlock() {
+      const box = document.getElementById('manualUnlockBox');
+      if (box) box.classList.toggle('hidden');
+    }
+
+    function submitManualLicense() {
+      const input = document.getElementById('manualLicenseInput');
+      const err = document.getElementById('licenseError');
+      const val = (input?.value || '').trim();
+
+      if (val === APP_LICENSE_SECRET) {
+        localStorage.setItem('aversa_app_license', val);
+        if (err) err.classList.add('hidden');
+        initAppGatekeeper();
+      } else {
+        if (err) err.classList.remove('hidden');
+      }
+    }
+
+    function initAppGatekeeper() {
+      if (isLicenseValid()) {
+        if (dom.paywallCard) dom.paywallCard.classList.add('hidden');
+        if (dom.appCard) dom.appCard.classList.remove('hidden');
+        refreshApp();
+      } else {
+        if (dom.appCard) dom.appCard.classList.add('hidden');
+        if (dom.paywallCard) dom.paywallCard.classList.remove('hidden');
+      }
+    }
 
     // -------------------------------------------------------------
     // COSTANTI & CONFIGURAZIONI TEMA
@@ -863,8 +996,10 @@
       await handlePullEnd();
     });
 
-    // Avvio al caricamento della pagina
-    refreshApp();
+    // -------------------------------------------------------------
+    // AVVIO APPLICAZIONE (VERIFICA LICENZA PRIMA DI SCARICARE I DATI)
+    // -------------------------------------------------------------
+    initAppGatekeeper();
   </script>
 </body>
 </html>
