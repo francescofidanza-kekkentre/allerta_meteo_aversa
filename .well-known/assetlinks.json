@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "dev.pages.allerta_meteo_aversa.twa",
-        "sha256_cert_fingerprints": ["4C:66:FA:40:2F:E1:82:FB:2C:86:84:4F:B6:7B:52:C4:AF:21:05:19:9C:E6:8B:A0:6C:2A:E8:CF:99:91:7D:62"]
+        "sha256_cert_fingerprints": ["A7:F4:A6:9A:06:FC:35:10:BA:89:28:06:A7:96:43:C7:6F:B8:03:A3:BE:B2:CF:65:E5:C7:65:4E:FF:E6:24:73"]
       }
     }]
