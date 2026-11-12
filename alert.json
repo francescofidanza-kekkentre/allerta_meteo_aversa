@@ -1,12 +1,12 @@
 {
-  "status": "VERDE",
-  "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il Bollettino di criticità nazionale della Protezione Civile del 11/11/2026 ore 15:40.",
+  "status": "GIALLA",
+  "message": "Allerta meteo GIALLA confermata dal bollettino del Centro Funzionale Multirischi Campania per la Zona 1. Precipitazioni locali o sparse, anche a carattere di rovescio o isolato temporale, puntualmente di moderata intensità. Venti forti sud-occidentali con locali raffiche. Mare agitato o localmente molto agitato con possibili mareggiate lungo le coste esposte ai venti. Valido dalle 15:00 - 12/11/2026 alle 15:00 - 13/11/2026.",
   "weather_summary": "Coperto",
-  "temperature": 15.8,
-  "temp_max": 23.1,
+  "temperature": 22.7,
+  "temp_max": 23.4,
   "temp_min": 15.2,
-  "wind_speed": 5.4,
+  "wind_speed": 25.6,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "12/11/2026, 04:43:06"
+  "updated_at": "12/11/2026, 13:27:03"
 }
