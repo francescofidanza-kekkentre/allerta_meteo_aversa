@@ -1,12 +1,12 @@
 {
   "status": "VERDE",
   "message": "Condizioni per la Zona 1: Venti localmente forti da Ovest-Sud-Ovest con raffiche. Mare agiato con possibili mareggiate lungo le coste esposte ai venti. Valido dalle 20:00 - 17/11/2026 alle 16:00 - 18/11/2026.",
-  "weather_summary": "Coperto",
-  "temperature": 17.2,
-  "temp_max": 19.3,
-  "temp_min": 12.3,
-  "wind_speed": 10.3,
+  "weather_summary": "Previsioni in aggiornamento",
+  "temperature": null,
+  "temp_max": null,
+  "temp_min": null,
+  "wind_speed": null,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "17/11/2026, 20:43:33"
+  "updated_at": "18/11/2026, 03:17:27"
 }
