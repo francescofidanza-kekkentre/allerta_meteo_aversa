@@ -1,12 +1,12 @@
 {
   "status": "VERDE",
-  "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il Bollettino di criticità nazionale della Protezione Civile del 20/11/2026 ore 13:42.",
-  "weather_summary": "Principalmente sereno",
-  "temperature": 12.1,
-  "temp_max": 18.6,
-  "temp_min": 12.1,
-  "wind_speed": 3.1,
+  "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il Bollettino di criticità nazionale della Protezione Civile del 21/11/2026 ore 14:49.",
+  "weather_summary": "Parzialmente nuvoloso",
+  "temperature": 17.4,
+  "temp_max": 18.8,
+  "temp_min": 11.7,
+  "wind_speed": 9.5,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "21/11/2026, 07:53:30"
+  "updated_at": "21/11/2026, 16:13:57"
 }
