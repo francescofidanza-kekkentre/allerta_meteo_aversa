@@ -275,11 +275,10 @@
     // così si riconosce l'app installata senza codici segreti nel sorgente.
     // Il pagamento è gestito interamente da Google Play.
     const TWA_REFERRER = 'android-app://dev.pages.allerta_meteo_aversa.twa';
-    const UNLOCK_KEY = 'aversa_app_unlocked';
-    // Compatibilità con le versioni Android già installate, che passano ancora
-    // ?app_license=... nell'URL: si confronta solo l'hash SHA-256, non il codice.
-    const LEGACY_LICENSE_SHA256 = '3ad6c25d15c2051929c85c8306ae32b4b99a2bd8c760a04504b5a61ddb41db56';
-    const LEGACY_LICENSE_KEY = 'aversa_app_license';
+    // "_v2": invalida gli sblocchi ottenuti col vecchio codice di licenza (rimosso).
+    // L'app Android si risblocca da sola al primo avvio tramite il referrer.
+    const UNLOCK_KEY = 'aversa_app_unlocked_v2';
+    const OBSOLETE_KEYS = ['aversa_app_license', 'aversa_app_unlocked'];
 
     // -------------------------------------------------------------
     // RIFERIMENTI DOM CACHED (OTTIMIZZAZIONE PERFORMANCE)
@@ -325,13 +324,11 @@
       try { localStorage.setItem(key, value); } catch (e) { /* storage non disponibile */ }
     }
 
-    async function sha256Hex(text) {
-      if (!text || !window.crypto?.subtle) return null;
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-      return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
-    }
+    function isLicenseValid() {
+      OBSOLETE_KEYS.forEach(key => {
+        try { localStorage.removeItem(key); } catch (e) { /* storage non disponibile */ }
+      });
 
-    async function isLicenseValid() {
       // 1. Già sbloccato in precedenza su questo dispositivo
       if (storageGet(UNLOCK_KEY) === '1') return true;
 
@@ -340,21 +337,11 @@
         storageSet(UNLOCK_KEY, '1');
         return true;
       }
-
-      // 3. Versioni Android precedenti (codice nell'URL o già salvato)
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlToken = urlParams.get('app_license') || urlParams.get('license');
-      if (urlToken) history.replaceState({}, document.title, window.location.pathname);
-      const legacyToken = urlToken || storageGet(LEGACY_LICENSE_KEY);
-      if (legacyToken && await sha256Hex(legacyToken) === LEGACY_LICENSE_SHA256) {
-        storageSet(UNLOCK_KEY, '1');
-        return true;
-      }
       return false;
     }
 
-    async function initAppGatekeeper() {
-      if (await isLicenseValid()) {
+    function initAppGatekeeper() {
+      if (isLicenseValid()) {
         if (dom.paywallCard) dom.paywallCard.classList.add('hidden');
         if (dom.appCard) dom.appCard.classList.remove('hidden');
         refreshApp();

@@ -5,9 +5,10 @@ Pacchetto Android: `dev.pages.allerta_meteo_aversa.twa`
 
 ## 1. Generare il nuovo pacchetto Android (versione 2 / 1.1.0)
 
-Il pacchetto attuale (10/11/2026) apre `/?app_license=...` e usa le vecchie icone Flaticon.
-Il sito ora riconosce l'app dal referrer `android-app://dev.pages.allerta_meteo_aversa.twa`,
+Il sito riconosce l'app dal referrer `android-app://dev.pages.allerta_meteo_aversa.twa`,
 quindi l'URL di avvio deve essere semplicemente `/`.
+Il vecchio codice `?app_license=...` non è più accettato: il pacchetto del 10/11/2026
+(versionCode 1) mostra la schermata di acquisto e va sostituito dalla versione 2.
 
 **Opzione A – PWABuilder (come la prima volta)**
 1. Apri https://www.pwabuilder.com, inserisci `https://allerta-meteo-aversa.pages.dev`.
