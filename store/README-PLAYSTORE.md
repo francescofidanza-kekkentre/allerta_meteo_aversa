@@ -8,7 +8,11 @@ Pacchetto Android: `dev.pages.allerta_meteo_aversa.twa`
 Il sito riconosce l'app dal referrer `android-app://dev.pages.allerta_meteo_aversa.twa`,
 quindi l'URL di avvio deve essere semplicemente `/`.
 Il vecchio codice `?app_license=...` non è più accettato: il pacchetto del 10/11/2026
-(versionCode 1) mostra la schermata di acquisto e va sostituito dalla versione 2.
+(versionCode 1) mostra la schermata di acquisto ed è stato sostituito.
+
+Le modifiche al sito (testi, grafica, allerte) arrivano da sole all'app installata:
+serve un nuovo pacchetto solo se cambiano nome/icona sul telefono, indirizzo di avvio,
+versione minima di Android o chiave di firma.
 
 **Opzione A – PWABuilder (come la prima volta)**
 1. Apri https://www.pwabuilder.com, inserisci `https://allerta-meteo-aversa.pages.dev`.
@@ -30,15 +34,16 @@ bubblewrap build
 La configurazione è in `android/twa-manifest.json`; la keystore resta fuori dal repo.
 A ogni nuova versione incrementa `appVersionCode`.
 
-## 2. Collegare la chiave di firma di Google Play (assetlinks)
+## 2. Collegare la chiave di firma di Google Play (assetlinks) – FATTO
 
-`.well-known/assetlinks.json` contiene solo l'impronta della chiave di upload.
-Con Play App Signing, Google rifirma l'app con un'altra chiave: senza la sua impronta
-l'app installata dallo store mostra la barra degli indirizzi di Chrome.
+`.well-known/assetlinks.json` contiene già le impronte della chiave di upload e della chiave
+con cui Google Play firma davvero l'app installata (`F3:FE:20…:D1:6D`).
+Senza l'impronta giusta l'app installata dallo store mostra la barra degli indirizzi di Chrome.
 
+Da rifare solo se Google cambia la chiave di firma:
 1. Play Console → l'app → Test e rilascio → Configurazione → **Integrità dell'app** → Firma dell'app.
 2. Copia "Impronta del certificato SHA-256" della **chiave di firma dell'app**.
-3. Aggiungila come secondo elemento di `sha256_cert_fingerprints` in `.well-known/assetlinks.json`.
+3. Aggiungila a `sha256_cert_fingerprints` in `.well-known/assetlinks.json`.
 4. Verifica (deve rispondere `"linked": true`):
    `https://digitalassetlinks.googleapis.com/v1/assetlinks:check?source.web.site=https://allerta-meteo-aversa.pages.dev&relation=delegate_permission/common.handle_all_urls&target.android_app.package_name=dev.pages.allerta_meteo_aversa.twa&target.android_app.certificate.sha256_fingerprint=<IMPRONTA>`
 
@@ -48,8 +53,13 @@ File pronti in questa cartella:
 - `icon-512.png` – icona dell'app (512×512)
 - `feature-graphic.png` – grafica in evidenza (1024×500)
 
-**Screenshot (da fare sul telefono):** almeno 2, meglio 4, in verticale (es. 1080×1920):
-scheda "Oggi" con allerta e scuole, grafico orario, scheda "Previsioni", stato allerta gialla/arancione se capita.
+**Screenshot (già caricati in Play Console, in quest'ordine):** cartella `screenshots/`, 1080×2160
+1. `04-fenomeni-meteo.png` – allerta verde con fenomeni meteo previsti
+2. `01-meteo-allerta.png` – meteo e allerta
+3. `02-grafico-temperature.png` – grafico orario
+4. `03-previsioni-48h.png` – previsioni 48 ore
+
+Dichiarazione asset AI: "Non etichettare gli asset" (sono screenshot reali dell'app).
 
 **Nome (max 30):** Aversa Scuola & Allerte
 

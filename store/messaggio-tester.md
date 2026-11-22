@@ -23,8 +23,8 @@ Grazie mille!
 
 ## Promemoria prima dell'invio
 
-1. **Crea il test chiuso**: Test e rilascio → Test → Test chiuso → nuovo canale, carica l'`.aab`
-   (o promuovi la release dal test interno) e aggiungi un elenco email con i Gmail dei tester.
+1. **Test chiuso**: il canale "Test chiusi - Alpha" è già creato (versione 3 / 1.2.0, paese Italia).
+   Manca solo l'elenco email "Tester Aversa" con i Gmail dei tester, da collegare al canale.
 2. **App a pagamento**: aggiungi gli stessi Gmail anche in Impostazioni → **Test delle licenze**,
    così dovrebbero poterla installare con un pagamento di prova. Verificalo con il primo tester
    prima di scrivere a tutti.
