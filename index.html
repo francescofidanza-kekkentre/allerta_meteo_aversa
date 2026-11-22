@@ -791,10 +791,12 @@
     }
 
     let frontendVersion = null;
+    // Cloudflare Pages non invia ETag/Last-Modified: la "versione" è il contenuto
+    // stesso della pagina (circa 45 KB, riscaricato all'avvio e quando l'app torna visibile).
     async function getFrontendVersion() {
       try {
-        const res = await fetch('./index.html', { method: 'HEAD', cache: 'no-cache' });
-        return res.headers.get('etag') || res.headers.get('last-modified');
+        const res = await fetch('./', { cache: 'no-cache' });
+        return res.ok ? await res.text() : null;
       } catch (err) {
         return null;
       }
