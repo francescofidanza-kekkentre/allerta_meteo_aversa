@@ -29,12 +29,15 @@
   "generatorApp": "bubblewrap-cli",
   "fallbackType": "customtabs",
   "features": {},
-  "alphaDependencies": { "enabled": false },
+  "alphaDependencies": {
+    "enabled": false
+  },
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "minSdkVersion": 21,
+  "minSdkVersion": 24,
   "fingerprints": [],
   "additionalTrustedOrigins": [],
-  "retainedBundles": []
+  "retainedBundles": [],
+  "appVersion": "1.1.0"
 }
