@@ -4,9 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aversa Meteo & Allerte</title>
+  <meta name="description" content="Meteo, allerte della Protezione Civile e stato delle scuole per Aversa (Zona 1 - Piana Campana).">
+  <meta name="theme-color" content="#f1f5f9">
 
   <!-- PWA Metadata & Manifest -->
   <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 
   <!-- Icone & Impostazioni Apple iOS -->
   <link rel="apple-touch-icon" href="./APPLE_ICON.png">
@@ -14,9 +17,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Aversa Meteo">
 
-  <!-- Tailwind CSS & Chart.js -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- CSS Tailwind compilato (ricostruito da .github/workflows/build-css.yml) & Chart.js locale: funzionano anche offline -->
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./vendor/chart.umd.min.js"></script>
 
   <style>
     html, body {
@@ -41,12 +44,12 @@
       
       <!-- Icona App -->
       <div class="inline-flex p-4 bg-sky-50 rounded-3xl border border-sky-100 shadow-sm">
-        <img src="./APPLE_ICON.png" alt="Aversa Meteo Icon" class="w-20 h-20 rounded-2xl shadow-xs object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1163/1163661.png'">
+        <img src="./APPLE_ICON.png" alt="Aversa Meteo Icon" class="w-20 h-20 rounded-2xl shadow-xs object-cover">
       </div>
 
       <div class="space-y-1">
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Aversa Meteo & Allerte</h1>
-        <p class="text-xs font-bold text-sky-600 uppercase tracking-wider">Applicazione Ufficiale</p>
+        <p class="text-xs font-bold text-sky-600 uppercase tracking-wider">App su Google Play</p>
       </div>
 
       <p class="text-xs text-slate-500 leading-relaxed px-2">
@@ -88,22 +91,12 @@
         <span>Acquista su Google Play</span>
       </a>
 
-      <!-- Sblocco manuale licenza (per acquirenti / test) -->
-      <div class="text-center pt-1">
-        <button onclick="toggleManualUnlock()" class="text-[11px] text-slate-400 hover:text-slate-600 underline cursor-pointer">
-          Hai già acquistato o hai un codice licenza?
-        </button>
-        <div id="manualUnlockBox" class="hidden mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-          <input type="text" id="manualLicenseInput" placeholder="Inserisci il codice licenza" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg text-center font-mono">
-          <button onclick="submitManualLicense()" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-lg transition-colors cursor-pointer">
-            Verifica Licenza
-          </button>
-          <div id="licenseError" class="hidden text-[11px] text-red-600 font-semibold">Codice licenza non valido.</div>
-        </div>
-      </div>
+      <p class="text-center text-[11px] text-slate-400 leading-snug pt-1">
+        Hai già acquistato? Apri l'app dal tuo telefono Android.
+      </p>
 
       <div class="text-center text-[10px] text-slate-400 space-x-1">
-        <span>Aversa (CE) • Protezione Civile Campania Zona 1</span>
+        <span>App indipendente, non affiliata a enti pubblici</span>
         <span>·</span>
         <a href="./privacy.html" class="underline hover:text-slate-600">Privacy Policy</a>
       </div>
@@ -259,6 +252,11 @@
         <span>📱 Installa come App su Mac / Smartphone</span>
       </button>
 
+      <p class="text-center text-[10px] text-slate-400 leading-snug pt-1">
+        App indipendente: non è affiliata né approvata dalla Protezione Civile, dalla Regione Campania o dal Comune di Aversa.
+        In caso di emergenza fai sempre riferimento alle fonti ufficiali.
+      </p>
+
       <div class="text-center text-[10px] text-slate-400 pt-1 space-x-1">
         <span>Dati meteo: Open-Meteo · Allerte via Protezione Civile</span>
         <span>·</span>
@@ -271,9 +269,17 @@
   <!-- SCRIPT LOGICA APPLICAZIONE -->
   <script>
     // -------------------------------------------------------------
-    // CHIAVE DI LICENZA (CONFIGURABILE PER L'APP GOOGLE PLAY)
+    // ACCESSO RISERVATO ALL'APP GOOGLE PLAY
     // -------------------------------------------------------------
-    const APP_LICENSE_SECRET = 'aversa_lic_playstore_2026';
+    // L'app Android (TWA) apre la pagina con referrer "android-app://<pacchetto>":
+    // così si riconosce l'app installata senza codici segreti nel sorgente.
+    // Il pagamento è gestito interamente da Google Play.
+    const TWA_REFERRER = 'android-app://dev.pages.allerta_meteo_aversa.twa';
+    const UNLOCK_KEY = 'aversa_app_unlocked';
+    // Compatibilità con le versioni Android già installate, che passano ancora
+    // ?app_license=... nell'URL: si confronta solo l'hash SHA-256, non il codice.
+    const LEGACY_LICENSE_SHA256 = '3ad6c25d15c2051929c85c8306ae32b4b99a2bd8c760a04504b5a61ddb41db56';
+    const LEGACY_LICENSE_KEY = 'aversa_app_license';
 
     // -------------------------------------------------------------
     // RIFERIMENTI DOM CACHED (OTTIMIZZAZIONE PERFORMANCE)
@@ -312,44 +318,43 @@
     // -------------------------------------------------------------
     // GESTIONE AUTENTICAZIONE LICENZA & GATEKEEPER
     // -------------------------------------------------------------
-    function isLicenseValid() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlToken = urlParams.get('app_license') || urlParams.get('license');
+    function storageGet(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function storageSet(key, value) {
+      try { localStorage.setItem(key, value); } catch (e) { /* storage non disponibile */ }
+    }
 
-      // 1. Se fornito tramite URL dall'App Android
-      if (urlToken && urlToken === APP_LICENSE_SECRET) {
-        localStorage.setItem('aversa_app_license', urlToken);
-        // Pulizia dell'URL nella barra indirizzi per sicurezza ed eleganza
-        history.replaceState({}, document.title, window.location.pathname);
+    async function sha256Hex(text) {
+      if (!text || !window.crypto?.subtle) return null;
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function isLicenseValid() {
+      // 1. Già sbloccato in precedenza su questo dispositivo
+      if (storageGet(UNLOCK_KEY) === '1') return true;
+
+      // 2. Avvio dall'app Android installata da Google Play
+      if (document.referrer.startsWith(TWA_REFERRER)) {
+        storageSet(UNLOCK_KEY, '1');
         return true;
       }
 
-      // 2. Se già sbloccato e memorizzato in precedenza nel dispositivo
-      const storedToken = localStorage.getItem('aversa_app_license');
-      return storedToken === APP_LICENSE_SECRET;
-    }
-
-    function toggleManualUnlock() {
-      const box = document.getElementById('manualUnlockBox');
-      if (box) box.classList.toggle('hidden');
-    }
-
-    function submitManualLicense() {
-      const input = document.getElementById('manualLicenseInput');
-      const err = document.getElementById('licenseError');
-      const val = (input?.value || '').trim();
-
-      if (val === APP_LICENSE_SECRET) {
-        localStorage.setItem('aversa_app_license', val);
-        if (err) err.classList.add('hidden');
-        initAppGatekeeper();
-      } else {
-        if (err) err.classList.remove('hidden');
+      // 3. Versioni Android precedenti (codice nell'URL o già salvato)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get('app_license') || urlParams.get('license');
+      if (urlToken) history.replaceState({}, document.title, window.location.pathname);
+      const legacyToken = urlToken || storageGet(LEGACY_LICENSE_KEY);
+      if (legacyToken && await sha256Hex(legacyToken) === LEGACY_LICENSE_SHA256) {
+        storageSet(UNLOCK_KEY, '1');
+        return true;
       }
+      return false;
     }
 
-    function initAppGatekeeper() {
-      if (isLicenseValid()) {
+    async function initAppGatekeeper() {
+      if (await isLicenseValid()) {
         if (dom.paywallCard) dom.paywallCard.classList.add('hidden');
         if (dom.appCard) dom.appCard.classList.remove('hidden');
         refreshApp();

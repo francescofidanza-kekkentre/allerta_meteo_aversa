@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#075985"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <g transform="translate(70 70) scale(0.703)">
+    <g fill="#ffffff">
+      <circle cx="200" cy="250" r="62"/><circle cx="275" cy="215" r="80"/>
+      <circle cx="340" cy="262" r="52"/><rect x="140" y="250" width="252" height="64" rx="32"/>
+    </g>
+    <g stroke="#bae6fd" stroke-width="14" stroke-linecap="round">
+      <line x1="190" y1="342" x2="178" y2="372"/><line x1="245" y1="342" x2="233" y2="372"/>
+    </g>
+    <g transform="translate(318 318)">
+      <path d="M0 -62 L58 40 H-58 Z" fill="#facc15" stroke="#facc15" stroke-width="18" stroke-linejoin="round"/>
+      <rect x="-7" y="-26" width="14" height="40" rx="7" fill="#0c4a6e"/><circle cx="0" cy="28" r="8.5" fill="#0c4a6e"/>
+    </g>
+  </g>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#ffffff">
+    <text x="450" y="215" font-size="60" font-weight="800">Aversa Meteo</text>
+    <text x="450" y="285" font-size="60" font-weight="800">&amp; Allerte</text>
+    <text x="452" y="345" font-size="26" font-weight="500" fill="#e0f2fe">Allerte meteo · Scuole · Previsioni 48h</text>
+  </g>
+</svg>

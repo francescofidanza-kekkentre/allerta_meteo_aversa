@@ -1,0 +1,8 @@
+# Chiavi di firma e build Android: mai nel repository
+*.keystore
+*.jks
+signing-key-info.txt
+android/*
+!android/twa-manifest.json
+node_modules/
+.DS_Store

@@ -2,40 +2,20 @@
   "id": "aversa-meteo-pwa",
   "name": "Aversa Meteo & Allerte",
   "short_name": "Meteo Aversa",
-  "description": "Widget meteo e allerte Protezione Civile Campania per la città di Aversa (Zona 1)",
+  "description": "Meteo, allerte della Protezione Civile e stato delle scuole per Aversa (Zona 1 - Piana Campana).",
+  "lang": "it",
+  "dir": "ltr",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#f8fafc",
+  "background_color": "#f1f5f9",
+  "theme_color": "#f1f5f9",
+  "categories": ["weather", "news", "education"],
   "icons": [
-    {
-      "src": "https://wsrv.nl/?url=https://cdn-icons-png.flaticon.com/512/1163/1163661.png&w=192&h=192&output=png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/1163/1163661.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/1163/1163661.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Meteo e Allerte Aversa Mobile"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/1163/1163661.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Meteo e Allerte Aversa Desktop"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -5,7 +5,13 @@ const CACHE_NAME = 'aversa-meteo-shell';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './manifest.json'
+  './privacy.html',
+  './manifest.json',
+  './styles.css',
+  './vendor/chart.umd.min.js',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './APPLE_ICON.png'
 ];
 // Oltre questo tempo senza risposta si usa la copia in cache (rete lenta/assente).
 const NETWORK_TIMEOUT_MS = 5000;

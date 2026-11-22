@@ -1,0 +1,38 @@
+name: Build CSS
+
+# Ricompila styles.css (Tailwind) quando cambiano le pagine, così le nuove
+# classi usate in index.html/privacy.html finiscono sempre nel CSS pubblicato.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'privacy.html'
+      - 'tailwind.config.js'
+      - 'src/tailwind.css'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-css:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Compila Tailwind
+        run: npx -y tailwindcss@3.4.17 -i src/tailwind.css -o styles.css --minify
+
+      - name: Commit di styles.css se cambiato
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add styles.css
+          git commit -m "Automated rebuild of styles.css" || exit 0
+          git pull --rebase
+          git push
