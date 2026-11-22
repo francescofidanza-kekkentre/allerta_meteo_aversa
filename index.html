@@ -760,16 +760,16 @@
         const row = document.createElement('div');
         row.className = 'bg-white border border-slate-100 rounded-2xl p-3 flex items-center justify-between text-xs mb-1.5 shadow-xs';
         row.innerHTML = `
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-slate-800 w-11">${hourStr}</span>
-            <div class="flex items-center gap-2">
-              <span class="text-base">${info.icon}</span>
-              <span class="font-medium text-slate-600">${info.desc}</span>
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="font-bold text-slate-800 w-11 shrink-0">${hourStr}</span>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-base shrink-0">${info.icon}</span>
+              <span class="font-medium text-slate-600 truncate">${info.desc}</span>
             </div>
           </div>
-          <div class="flex items-center gap-2.5">
-            <span class="text-slate-400 text-[11px]">💨 ${wind} km/h</span>
-            ${pop > 0 ? `<span class="text-sky-600 font-semibold text-[11px]">💧 ${pop}%</span>` : ''}
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-slate-400 text-[11px] w-16 text-right whitespace-nowrap">💨 ${wind} km/h</span>
+            <span class="text-[11px] w-11 text-right whitespace-nowrap ${pop > 0 ? 'text-sky-600 font-semibold' : 'text-slate-300'}">💧 ${pop}%</span>
             <span class="font-bold text-slate-800 text-sm w-8 text-right">${temp}°</span>
           </div>
         `;
