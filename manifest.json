@@ -1,7 +1,7 @@
 {
   "id": "aversa-meteo-pwa",
-  "name": "Aversa Meteo & Allerte",
-  "short_name": "Meteo Aversa",
+  "name": "Aversa Scuola & Allerte",
+  "short_name": "Aversa Scuola",
   "description": "Meteo, allerte della Protezione Civile e stato delle scuole per Aversa (Zona 1 - Piana Campana).",
   "lang": "it",
   "dir": "ltr",

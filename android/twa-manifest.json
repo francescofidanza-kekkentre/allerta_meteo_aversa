@@ -1,8 +1,8 @@
 {
   "packageId": "dev.pages.allerta_meteo_aversa.twa",
   "host": "allerta-meteo-aversa.pages.dev",
-  "name": "Aversa Meteo & Allerte",
-  "launcherName": "Meteo Aversa",
+  "name": "Aversa Scuola & Allerte",
+  "launcherName": "Aversa Scuola",
   "display": "standalone",
   "orientation": "portrait",
   "themeColor": "#F1F5F9",
@@ -23,8 +23,8 @@
     "path": "../../../Meteo Aversa - Google Play package/signing.keystore",
     "alias": "my-key-alias"
   },
-  "appVersionName": "1.1.0",
-  "appVersionCode": 2,
+  "appVersionName": "1.2.0",
+  "appVersionCode": 3,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "fallbackType": "customtabs",
@@ -39,5 +39,5 @@
   "fingerprints": [],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
-  "appVersion": "1.1.0"
+  "appVersion": "1.2.0"
 }

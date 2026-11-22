@@ -3,7 +3,7 @@
 Sito servito da Cloudflare Pages: https://allerta-meteo-aversa.pages.dev
 Pacchetto Android: `dev.pages.allerta_meteo_aversa.twa`
 
-## 1. Generare il nuovo pacchetto Android (versione 2 / 1.1.0)
+## 1. Generare il pacchetto Android (ultima: versione 3 / 1.2.0)
 
 Il sito riconosce l'app dal referrer `android-app://dev.pages.allerta_meteo_aversa.twa`,
 quindi l'URL di avvio deve essere semplicemente `/`.
@@ -14,7 +14,7 @@ Il vecchio codice `?app_license=...` non è più accettato: il pacchetto del 10/
 1. Apri https://www.pwabuilder.com, inserisci `https://allerta-meteo-aversa.pages.dev`.
 2. Package for stores → Android → Options:
    - Package ID: `dev.pages.allerta_meteo_aversa.twa`
-   - Version code: `2`, Version name: `1.1.0`
+   - Version code: `3`, Version name: `1.2.0`
    - URL di avvio: `/` (senza `?app_license`)
    - Signing key: **Use mine** → carica `signing.keystore` della cartella
      "Meteo Aversa - Google Play package" (alias `my-key-alias`, password in `signing-key-info.txt`).
@@ -51,14 +51,14 @@ File pronti in questa cartella:
 **Screenshot (da fare sul telefono):** almeno 2, meglio 4, in verticale (es. 1080×1920):
 scheda "Oggi" con allerta e scuole, grafico orario, scheda "Previsioni", stato allerta gialla/arancione se capita.
 
-**Nome (max 30):** Aversa Meteo & Allerte
+**Nome (max 30):** Aversa Scuola & Allerte
 
 **Descrizione breve (max 80):**
 Allerte meteo, chiusura scuole e previsioni per Aversa e l'agro aversano.
 
 **Descrizione completa:**
 ```
-Aversa Meteo & Allerte riunisce in un'unica schermata le informazioni utili ogni mattina a chi vive ad Aversa e nell'agro aversano.
+Aversa Scuola & Allerte riunisce in un'unica schermata le informazioni utili ogni mattina a chi vive ad Aversa e nell'agro aversano.
 
 • Allerta meteo per la Zona 1 (Piana Campana), aggiornata dai bollettini pubblici della Protezione Civile
 • Stato delle scuole di Aversa, con link all'avviso o all'ordinanza del Comune quando presente
