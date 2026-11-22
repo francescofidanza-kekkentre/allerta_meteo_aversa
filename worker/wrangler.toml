@@ -1,0 +1,10 @@
+# Worker che avvia l'aggiornamento delle allerte ogni 30 minuti.
+# Deploy: npx wrangler deploy   (da questa cartella)
+# Segreto: npx wrangler secret put GITHUB_TOKEN
+name = "allerta-meteo-cron"
+main = "index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+
+[triggers]
+crons = ["*/30 * * * *"]

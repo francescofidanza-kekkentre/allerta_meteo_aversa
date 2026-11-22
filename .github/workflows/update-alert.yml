@@ -4,8 +4,15 @@ on:
   schedule:
     # Esegue lo script ogni 30 minuti
     - cron: '*/30 * * * *'
-  # Permette di avviare l'azione manualmente dalla scheda Actions di GitHub
+  # Avvio manuale dalla scheda Actions e dal Worker Cloudflare "allerta-meteo-cron"
+  # (worker/), che lo chiama ogni 30 minuti: il cron di GitHub viene spesso
+  # ritardato di ore e qui resta solo come riserva.
   workflow_dispatch:
+
+# Una sola esecuzione alla volta: Worker e cron di GitHub possono coincidere.
+concurrency:
+  group: update-alert
+  cancel-in-progress: false
 
 jobs:
   update-alert:
@@ -38,4 +45,5 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add alert.json
           git commit -m "Automated update of alert.json" || exit 0
+          git pull --rebase
           git push
