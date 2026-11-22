@@ -165,6 +165,12 @@
               Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma per la Zona 1 (Piana Campana).
             </p>
 
+            <!-- Fenomeni meteo segnalati dal bollettino senza allerta (es. venti forti con livello verde) -->
+            <div id="weatherNotice" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-2.5 text-amber-950 space-y-0.5">
+              <div class="text-[11px] font-bold uppercase tracking-wide text-amber-800">⚠️ Fenomeni meteo previsti</div>
+              <p id="weatherNoticeText" class="text-xs leading-relaxed"></p>
+            </div>
+
             <div class="pt-2.5 border-t border-dashed border-emerald-300/80 flex items-center justify-between text-xs font-bold text-emerald-900">
               <div class="flex items-center gap-2">
                 <span>🏫 Scuole ad Aversa:</span>
@@ -300,6 +306,8 @@
       alertTitle: document.getElementById('alertTitle'),
       alertBadge: document.getElementById('alertBadge'),
       alertMessage: document.getElementById('alertMessage'),
+      weatherNotice: document.getElementById('weatherNotice'),
+      weatherNoticeText: document.getElementById('weatherNoticeText'),
       alertIcon: document.getElementById('alertIcon'),
       alertUpdatedAt: document.getElementById('alertUpdatedAt'),
       schoolStatus: document.getElementById('schoolStatus'),
@@ -635,6 +643,14 @@
 
       const status = (data.status || 'VERDE').toUpperCase();
       const theme = ALERT_THEMES[status] || ALERT_THEMES.VERDE;
+
+      // Con allerta gialla/arancione/rossa i fenomeni sono già nel messaggio
+      if (data.weather_notice && status === 'VERDE') {
+        dom.weatherNoticeText.textContent = data.weather_notice;
+        dom.weatherNotice.classList.remove('hidden');
+      } else {
+        dom.weatherNotice.classList.add('hidden');
+      }
       dom.alertCard.className = theme.card;
       dom.alertTitle.textContent = theme.title;
       dom.alertBadge.textContent = theme.badge;

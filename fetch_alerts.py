@@ -79,8 +79,11 @@ def get_bollettino_regione(adesso):
         raise AlertSourceError("Zona 1 assente nel bollettino del Centro Funzionale.")
 
     status = _livello_da_testo(area.get("livelloDesc"))
-    fenomeni = area.get("fenomeni") or ""
+    fenomeni = (area.get("fenomeni") or "").strip()
     validita = f"Valido dalle {dati['dataDa']} alle {dati['dataA']}."
+    # Fenomeni meteo segnalati senza allerta (es. venti forti con livello verde):
+    # vanno mostrati a parte, non nel messaggio "Nessuna allerta".
+    avviso_meteo = None
 
     if status != "VERDE":
         raw_message = (
@@ -88,7 +91,11 @@ def get_bollettino_regione(adesso):
             f"Centro Funzionale Multirischi Campania per la Zona 1. {fenomeni} {validita}"
         )
     elif fenomeni:
-        raw_message = f"Condizioni per la Zona 1: {fenomeni} {validita}"
+        raw_message = (
+            "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il "
+            f"bollettino del Centro Funzionale Multirischi Campania. {validita}"
+        )
+        avviso_meteo = fenomeni
     else:
         raw_message = (
             "Nessuna allerta meteo in vigore. Condizioni meteorologiche nella norma"
@@ -96,7 +103,7 @@ def get_bollettino_regione(adesso):
         )
 
     print(f"✅ Bollettino regionale Zona 1: {status} (emesso {dati.get('dataEmissione')}, {validita})")
-    return status, raw_message.strip()
+    return status, raw_message.strip(), avviso_meteo
 
 
 def _github_get(url):
@@ -197,13 +204,17 @@ def get_campania_alert_status():
     disponibile ripiega sul Bollettino di criticità nazionale. Se nessuna
     delle due fonti è affidabile solleva AlertSourceError (alert.json non viene
     sovrascritto con un VERDE "di default").
+
+    Restituisce (stato, messaggio, avviso_meteo); avviso_meteo è il testo dei
+    fenomeni segnalati senza allerta, oppure None.
     """
     adesso = datetime.now(ROME)
     try:
         return get_bollettino_regione(adesso)
     except AlertSourceError as e:
         print(f"⚠️ {e} Uso il Bollettino di criticità nazionale.")
-    return get_bollettino_nazionale(adesso)
+    status, raw_message = get_bollettino_nazionale(adesso)
+    return status, raw_message, None
 
 
 def get_aversa_open_meteo_forecast():
@@ -467,7 +478,7 @@ def fetch_and_update_alert():
     print("Avvio aggiornamento dati allerte, meteo e scuole...")
 
     try:
-        status, raw_message = get_campania_alert_status()
+        status, raw_message, weather_notice = get_campania_alert_status()
     except AlertSourceError as e:
         # Non sovrascrivere alert.json: resta pubblicato l'ultimo dato valido
         # e il workflow fallisce, rendendo l'errore visibile in GitHub Actions.
@@ -494,6 +505,7 @@ def fetch_and_update_alert():
     alert_data = {
         "status": status,
         "message": message,
+        "weather_notice": weather_notice,
         "weather_summary": weather_data["weather_desc"],
         "temperature": weather_data["temp_current"],
         "temp_max": weather_data["temp_max"],
