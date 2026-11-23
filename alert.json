@@ -3,11 +3,11 @@
   "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il bollettino del Centro Funzionale Multirischi Campania. Valido dalle 21:00 - 22/11/2026 alle 18:00 - 23/11/2026.",
   "weather_notice": "Venti forti o localmente molto forti dai quadranti occidentali con raffiche. Mare agiato o molto agitato con possibili mareggiate lungo le coste esposte ai venti.",
   "weather_summary": "Principalmente sereno",
-  "temperature": 16.5,
+  "temperature": 16.4,
   "temp_max": 17.9,
   "temp_min": 9.6,
-  "wind_speed": 27.7,
+  "wind_speed": 27.0,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "23/11/2026, 01:00:40"
+  "updated_at": "23/11/2026, 01:30:38"
 }
