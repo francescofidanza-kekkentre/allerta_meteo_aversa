@@ -3,11 +3,11 @@
   "message": "Allerta meteo GIALLA confermata dal bollettino del Centro Funzionale Multirischi Campania per la Zona 1. Precipitazioni locali tendenti a sparse dal pomeriggio, anche a carattere di rovescio o temporale, puntualmente di moderata intensità. Venti temporaneamente forti sud-occidentali con locali raffiche, soprattutto dalla sera. Mare agitato con possibili mareggiate lungo le coste esposte ai venti dalla sera. Valido dalle 09:00 - 25/11/2026 alle 09:00 - 26/11/2026.",
   "weather_notice": null,
   "weather_summary": "Parzialmente nuvoloso",
-  "temperature": 15.4,
+  "temperature": 14.9,
   "temp_max": 15.9,
   "temp_min": 6.8,
-  "wind_speed": 2.5,
+  "wind_speed": 3.2,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "24/11/2026, 15:30:37"
+  "updated_at": "24/11/2026, 16:00:39"
 }
