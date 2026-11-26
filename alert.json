@@ -1,6 +1,6 @@
 {
-  "status": "ARANCIONE",
-  "message": "Allerta meteo ARANCIONE confermata dal bollettino del Centro Funzionale Multirischi Campania per la Zona 1. Precipitazioni sparse o diffuse, anche a carattere di rovescio o temporale, localmente di moderata o forte intensità, in attenuazione nella mattinata di domani. Venti temporaneamente forti sud-occidentali con locali raffiche, soprattutto in serata. Mare agitato con possibili mareggiate lungo le coste esposte ai venti dalla sera. Valido dalle 14:00 - 25/11/2026 alle 14:00 - 26/11/2026.",
+  "status": "GIALLA",
+  "message": "Allerta meteo GIALLA confermata dal bollettino del Centro Funzionale Multirischi Campania per la Zona 1. Precipitazioni locali, anche a carattere di rovescio o temporale, puntualmente di moderata intensità. Valido dalle 14:00 - 26/11/2026 alle 14:00 - 27/11/2026.",
   "weather_notice": null,
   "weather_summary": "Previsioni in aggiornamento",
   "temperature": null,
@@ -9,5 +9,5 @@
   "wind_speed": null,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "26/11/2026, 11:30:46"
+  "updated_at": "26/11/2026, 12:00:51"
 }
