@@ -3,11 +3,11 @@
   "message": "Allerta meteo GIALLA confermata dal bollettino del Centro Funzionale Multirischi Campania per la Zona 1. Precipitazioni locali, anche a carattere di rovescio o temporale, puntualmente di moderata intensità. Valido dalle 14:00 - 26/11/2026 alle 14:00 - 27/11/2026.",
   "weather_notice": null,
   "weather_summary": "Rovesci di pioggia deboli",
-  "temperature": 15.4,
+  "temperature": 15.2,
   "temp_max": 16.9,
   "temp_min": 12.5,
-  "wind_speed": 14.2,
+  "wind_speed": 13.4,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "26/11/2026, 13:00:45"
+  "updated_at": "26/11/2026, 13:30:40"
 }
