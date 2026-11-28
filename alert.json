@@ -1,13 +1,13 @@
 {
   "status": "VERDE",
-  "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il Bollettino di criticità nazionale della Protezione Civile del 27/11/2026 ore 14:17.",
-  "weather_notice": null,
+  "message": "Nessuna allerta meteo in vigore per la Zona 1 (Piana Campana) secondo il bollettino del Centro Funzionale Multirischi Campania. Valido dalle 14:00 - 28/11/2026 alle 20:00 - 29/11/2026.",
+  "weather_notice": "Venti forti settentrionali con locali rinforzi, soprattutto nella giornata di domenica, e con possibili raffiche. Mare agiato, con possibili mareggiate lungo le coste esposte ai venti.",
   "weather_summary": "Coperto",
-  "temperature": 10.7,
+  "temperature": 11.8,
   "temp_max": 15.4,
   "temp_min": 6.3,
-  "wind_speed": 3.1,
+  "wind_speed": 4.0,
   "schools_closed": false,
   "schools_notice": null,
-  "updated_at": "28/11/2026, 09:30:39"
+  "updated_at": "28/11/2026, 10:00:39"
 }
